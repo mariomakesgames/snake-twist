@@ -15,12 +15,14 @@ export class SnakeScene extends Phaser.Scene {
     public speedBoostFood!: SpeedBoostFood;
     public slowFood!: SlowFood;
     public portalManager!: PortalManager;
-    // private cursors: any; // Removed unused variable
-    // private scoreText: any; // Removed unused variable
     public gameSpeed: number;
     private gridSize: number;
     private gameWidth: number;
     private gameHeight: number;
+    
+    // UI Elements
+    private pauseButton!: Phaser.GameObjects.Container;
+    private isGameStarted: boolean = false;
 
     constructor() {
         super({ key: 'SnakeScene' });
@@ -35,6 +37,9 @@ export class SnakeScene extends Phaser.Scene {
     }
 
     public create(): void {
+        console.log('SnakeScene create() called');
+        console.log('Game dimensions:', this.gameWidth, 'x', this.gameHeight);
+        
         // Create background
         this.add.rectangle(0, 0, this.gameWidth, this.gameHeight, 0x222222).setOrigin(0, 0);
         
@@ -64,9 +69,6 @@ export class SnakeScene extends Phaser.Scene {
         // Create portal manager
         this.portalManager = new PortalManager(this);
         
-        // Setup input - removed cursors as it's not used
-        // this.cursors = this.input.keyboard?.createCursorKeys();
-        
         // Setup collision detection
         this.physics.add.overlap(this.snake.head, this.food.sprite, this.eatFood, undefined, this);
         this.physics.add.overlap(this.snake.head, this.growthBoostFood.sprite, this.eatGrowthBoostFood, undefined, this);
@@ -80,8 +82,21 @@ export class SnakeScene extends Phaser.Scene {
         headBody.setCollideWorldBounds(true);
         this.physics.world.on('worldbounds', this.gameOver, this);
         
-        // Setup UI buttons - removed since we use React event handlers
-        // this.setupButtons();
+        // Setup pause button
+        this.createPauseButton();
+        
+        // Auto start the game
+        this.autoStartGame();
+        
+        // Initialize game state
+        const gameState = (window as any).gameState;
+        if (gameState) {
+            gameState.score = 0;
+            gameState.isPaused = false;
+            gameState.isGameOver = false;
+            gameState.isTeleporting = false;
+            (window as any).updateUI();
+        }
         
         // Notify that scene is ready
         EventBus.emit('current-scene-ready', this);
@@ -103,8 +118,6 @@ export class SnakeScene extends Phaser.Scene {
         
         graphics.stroke();
     }
-
-    // Removed setupButtons method since we use React event handlers
 
     private resetSnake(): void {
         // Reset snake to center position
@@ -136,29 +149,45 @@ export class SnakeScene extends Phaser.Scene {
         this.slowFood.reposition();
     }
 
-    public startGame(): void {
-        console.log('Start Game clicked');
+    private autoStartGame(): void {
+        console.log('Auto starting game...');
         const gameState = (window as any).gameState;
         
-        // If game is over, reset the game state but don't restart the scene
-        if (gameState.isGameOver) {
-            console.log('Game was over, resetting state');
-            gameState.score = 0;
-            gameState.isPaused = false;
-            gameState.isGameOver = false;
-            gameState.isTeleporting = false;
-            this.gameSpeed = 350;
-            (window as any).updateUI();
-            
-            // Reset snake position and state
-            this.resetSnake();
-        }
+        // Reset game state
+        console.log('Resetting game state');
+        gameState.score = 0;
+        gameState.isPaused = false;
+        gameState.isGameOver = false;
+        gameState.isTeleporting = false;
+        this.gameSpeed = 350;
+        (window as any).updateUI();
+        
+        // Reset snake position and state
+        this.resetSnake();
         
         // Start the snake
         this.snake.start();
         
         // Start portal manager
         this.portalManager.start();
+        
+        // Add celebration effect
+        this.createStartCelebration();
+        
+        // Show pause button with animation
+        this.pauseButton.setVisible(true);
+        this.pauseButton.setAlpha(0);
+        this.pauseButton.setScale(0.8);
+        this.tweens.add({
+            targets: this.pauseButton,
+            alpha: 1,
+            scaleX: 1,
+            scaleY: 1,
+            duration: 300,
+            ease: 'Power2'
+        });
+        
+        this.isGameStarted = true;
         
         console.log('Snake started, isMoving:', this.snake.isMoving);
         console.log('Snake head position:', this.snake.head.x, this.snake.head.y);
@@ -167,28 +196,140 @@ export class SnakeScene extends Phaser.Scene {
 
     public togglePause(): void {
         const gameState = (window as any).gameState;
-        if (!gameState.isGameOver) {
+        if (!gameState.isGameOver && this.isGameStarted) {
             gameState.isPaused = !gameState.isPaused;
+            
+            // Update pause button text
+            const text = this.pauseButton.getAt(1) as Phaser.GameObjects.Text;
+            text.setText(gameState.isPaused ? 'RESUME' : 'PAUSE');
+            
+            // Add button animation
+            this.tweens.add({
+                targets: this.pauseButton,
+                scaleX: 1.1,
+                scaleY: 1.1,
+                duration: 150,
+                ease: 'Power2',
+                yoyo: true
+            });
+            
+            // Add pause overlay effect
+            if (gameState.isPaused) {
+                this.createPauseOverlay();
+            } else {
+                this.removePauseOverlay();
+            }
         }
     }
 
-    public restartGame(): void {
-        console.log('Restarting game');
-        const gameState = (window as any).gameState;
-        gameState.score = 0;
-        gameState.isPaused = false;
-        gameState.isGameOver = false;
-        gameState.isTeleporting = false;
-        (window as any).updateUI();
+    private pauseOverlay?: Phaser.GameObjects.Rectangle;
+    private pauseText?: Phaser.GameObjects.Text;
+
+    private createPauseOverlay(): void {
+        // Create semi-transparent overlay
+        this.pauseOverlay = this.add.rectangle(
+            this.gameWidth / 2,
+            this.gameHeight / 2,
+            this.gameWidth,
+            this.gameHeight,
+            0x000000,
+            0.5
+        );
         
-        // Reset game speed
-        this.gameSpeed = 350;
+        // Create pause text
+        this.pauseText = this.add.text(
+            this.gameWidth / 2,
+            this.gameHeight / 2,
+            'PAUSED',
+            {
+                fontSize: '48px',
+                color: '#ffffff',
+                fontFamily: 'Arial',
+                fontStyle: 'bold'
+            }
+        ).setOrigin(0.5);
         
-        // Stop portal manager
-        this.portalManager.stop();
+        // Add entrance animation
+        this.pauseOverlay.setAlpha(0);
+        this.pauseText.setAlpha(0);
+        this.pauseText.setScale(0.5);
         
-        // Reset snake instead of restarting scene
-        this.resetSnake();
+        this.tweens.add({
+            targets: [this.pauseOverlay, this.pauseText],
+            alpha: 1,
+            duration: 300,
+            ease: 'Power2'
+        });
+        
+        this.tweens.add({
+            targets: this.pauseText,
+            scaleX: 1,
+            scaleY: 1,
+            duration: 300,
+            ease: 'Back.easeOut'
+        });
+    }
+
+    private removePauseOverlay(): void {
+        if (this.pauseOverlay && this.pauseText) {
+            this.tweens.add({
+                targets: [this.pauseOverlay, this.pauseText],
+                alpha: 0,
+                duration: 200,
+                ease: 'Power2',
+                onComplete: () => {
+                    this.pauseOverlay?.destroy();
+                    this.pauseText?.destroy();
+                    this.pauseOverlay = undefined;
+                    this.pauseText = undefined;
+                }
+            });
+        }
+    }
+
+    private createStartCelebration(): void {
+        // Create celebration particles around the snake head
+        for (let i = 0; i < 15; i++) {
+            const particle = this.add.circle(
+                this.snake.head.x + (Math.random() - 0.5) * 80,
+                this.snake.head.y + (Math.random() - 0.5) * 80,
+                2,
+                0x4CAF50
+            );
+            
+            this.tweens.add({
+                targets: particle,
+                x: particle.x + (Math.random() - 0.5) * 150,
+                y: particle.y + (Math.random() - 0.5) * 150,
+                alpha: 0,
+                scale: 0,
+                duration: 800 + Math.random() * 400,
+                ease: 'Power2',
+                onComplete: () => {
+                    particle.destroy();
+                }
+            });
+        }
+        
+        // Add a brief flash effect
+        const flash = this.add.rectangle(
+            this.gameWidth / 2,
+            this.gameHeight / 2,
+            this.gameWidth,
+            this.gameHeight,
+            0x4CAF50,
+            0.3
+        );
+        
+        this.tweens.add({
+            targets: flash,
+            alpha: 0,
+            duration: 300,
+            ease: 'Power2',
+            onComplete: () => {
+                flash.destroy();
+            }
+        });
     }
 
     private eatFood(): void {
@@ -288,10 +429,6 @@ export class SnakeScene extends Phaser.Scene {
         (window as any).updateUI();
     }
 
-
-
-
-
     public gameOver(): void {
         console.log('Game Over!');
         const gameState = (window as any).gameState;
@@ -301,7 +438,55 @@ export class SnakeScene extends Phaser.Scene {
             // Stop portal manager
             this.portalManager.stop();
             
+            // Create particle effect for game over
+            this.createGameOverParticles();
+            
+            // Hide pause button with animation
+            this.tweens.add({
+                targets: this.pauseButton,
+                alpha: 0,
+                scaleX: 0.8,
+                scaleY: 0.8,
+                duration: 300,
+                ease: 'Power2',
+                onComplete: () => {
+                    this.pauseButton.setVisible(false);
+                }
+            });
+            
+            this.isGameStarted = false;
+            
             EventBus.emit('game-over', gameState.score);
+            
+            // Switch to game over scene after a short delay
+            this.time.delayedCall(1000, () => {
+                this.scene.start('GameOverScene', { score: gameState.score });
+            });
+        }
+    }
+
+    private createGameOverParticles(): void {
+        // Create simple particle effect using graphics
+        for (let i = 0; i < 20; i++) {
+            const particle = this.add.circle(
+                this.snake.head.x + (Math.random() - 0.5) * 100,
+                this.snake.head.y + (Math.random() - 0.5) * 100,
+                3,
+                0xFF6B6B
+            );
+            
+            this.tweens.add({
+                targets: particle,
+                x: particle.x + (Math.random() - 0.5) * 200,
+                y: particle.y + (Math.random() - 0.5) * 200,
+                alpha: 0,
+                scale: 0,
+                duration: 1000 + Math.random() * 500,
+                ease: 'Power2',
+                onComplete: () => {
+                    particle.destroy();
+                }
+            });
         }
     }
 
@@ -310,5 +495,70 @@ export class SnakeScene extends Phaser.Scene {
         if (gameState.isPaused || gameState.isGameOver) return;
         
         this.snake.update(time);
+    }
+
+    private createPauseButton(): void {
+        const buttonWidth = 120;
+        const buttonHeight = 50;
+        const x = this.gameWidth - 80;
+        const y = 40;
+
+        // Create button background
+        const background = this.add.rectangle(x, y, buttonWidth, buttonHeight, 0xFF9800);
+        background.setStrokeStyle(2, 0xF57C00);
+
+        // Create button text
+        const text = this.add.text(x, y, 'PAUSE', {
+            fontSize: '18px',
+            color: '#ffffff',
+            fontFamily: 'Arial'
+        }).setOrigin(0.5);
+
+        // Create container first
+        this.pauseButton = this.add.container(x, y, [background, text]);
+        this.pauseButton.setActive(true).setVisible(false);
+
+        // Make the rectangle itself interactive
+        background.setInteractive();
+
+        // Add hover effects
+        background.on('pointerover', () => {
+            this.tweens.add({
+                targets: this.pauseButton,
+                scaleX: 1.05,
+                scaleY: 1.05,
+                duration: 150,
+                ease: 'Power2'
+            });
+            background.setFillStyle(0xFFB74D);
+        });
+
+        background.on('pointerout', () => {
+            this.tweens.add({
+                targets: this.pauseButton,
+                scaleX: 1,
+                scaleY: 1,
+                duration: 150,
+                ease: 'Power2'
+            });
+            background.setFillStyle(0xFF9800);
+        });
+
+        // Add click effect
+        background.on('pointerdown', () => {
+            this.tweens.add({
+                targets: this.pauseButton,
+                scaleX: 0.95,
+                scaleY: 0.95,
+                duration: 100,
+                ease: 'Power2',
+                yoyo: true
+            });
+        });
+
+        // Add click handler
+        background.on('pointerup', () => {
+            this.togglePause();
+        });
     }
 } 

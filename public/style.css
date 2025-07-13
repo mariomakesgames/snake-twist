@@ -24,17 +24,28 @@ body {
     text-align: center;
 }
 
-h1 {
-    font-size: 3em;
+.header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+h1 {
+    font-size: 2.2em;
+    margin: 0;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    flex-shrink: 0;
 }
 
 .score-display {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 20px;
     font-size: 1.2em;
+    gap: 20px;
+    flex-shrink: 0;
 }
 
 .score-item {

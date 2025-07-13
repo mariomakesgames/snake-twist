@@ -1,4 +1,6 @@
 import { AUTO, Game } from 'phaser';
+import { GameOverScene } from './scenes/GameOverScene';
+import { MenuScene } from './scenes/MenuScene';
 import { SnakeScene } from './scenes/SnakeScene';
 import { GameConfig, GameState } from './types/game';
 
@@ -43,6 +45,7 @@ const config: GameConfig = {
     width: 600,
     height: 600,
     parent: 'gameCanvas',
+    backgroundColor: '#222222',
     physics: {
         default: 'arcade',
         arcade: {
@@ -50,7 +53,11 @@ const config: GameConfig = {
             debug: false
         }
     },
-    scene: SnakeScene
+    scene: [MenuScene, SnakeScene, GameOverScene],
+    render: {
+        pixelArt: false,
+        antialias: true
+    }
 };
 
 // Function export for React component compatibility

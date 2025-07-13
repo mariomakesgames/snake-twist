@@ -141,7 +141,7 @@ export class PortalManager {
         // Calculate teleportation duration based on snake length
         const snake = (this.scene as any).snake;
         const snakeLength = snake ? snake.body.length : 1;
-        const teleportDuration = Math.max(4500, snakeLength * 150); // At least 4.5 seconds, plus 150ms per segment
+        const teleportDuration = Math.max(2000, snakeLength * 150); // At least 4.5 seconds, plus 150ms per segment
 
         console.log(`Starting teleportation for snake with ${snakeLength} segments, duration: ${teleportDuration}ms`);
 
