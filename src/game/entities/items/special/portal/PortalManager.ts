@@ -6,6 +6,8 @@ export class PortalManager {
     private spawnTimer: Phaser.Time.TimerEvent | null = null;
     private minScore: number = 10;
     private spawnInterval: number = 5000;
+    private isTeleporting: boolean = false;
+    private teleportationStartTime: number = 0;
 
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
@@ -30,7 +32,7 @@ export class PortalManager {
 
     private spawnPortals(): void {
         const gameState = (window as any).gameState;
-        if (gameState.isGameOver || gameState.score < this.minScore) {
+        if (gameState.isGameOver || gameState.score < this.minScore || this.isTeleporting) {
             return;
         }
 
@@ -106,12 +108,17 @@ export class PortalManager {
     }
 
     public checkTeleportation(snakeHeadX: number, snakeHeadY: number): { x: number; y: number } | null {
+        if (this.isTeleporting) {
+            return null; // Don't allow teleportation while already teleporting
+        }
+
         for (const portal of this.portals) {
             if (portal.isColliding(snakeHeadX, snakeHeadY)) {
                 const target = portal.getTarget();
                 if (target) {
+                    this.startTeleportation(portal, target);
                     const targetPos = target.getPosition();
-                    Portal.createPortalEffect(this.scene, targetPos.x, targetPos.y);
+                    // Portal.createPortalEffect(this.scene, targetPos.x, targetPos.y); // Removed diffusion effect
                     return targetPos;
                 }
             }
@@ -119,11 +126,43 @@ export class PortalManager {
         return null;
     }
 
+    private startTeleportation(portal1: Portal, portal2: Portal): void {
+        this.isTeleporting = true;
+        this.teleportationStartTime = this.scene.time.now;
+        
+        // Deactivate both portals during teleportation
+        portal1.deactivate();
+        portal2.deactivate();
+        
+        // Set teleporting state
+        portal1.setTeleportingState(true);
+        portal2.setTeleportingState(true);
+
+        // Calculate teleportation duration based on snake length
+        const snake = (this.scene as any).snake;
+        const snakeLength = snake ? snake.body.length : 1;
+        const teleportDuration = Math.max(4500, snakeLength * 150); // At least 4.5 seconds, plus 150ms per segment
+
+        console.log(`Starting teleportation for snake with ${snakeLength} segments, duration: ${teleportDuration}ms`);
+
+        // Reactivate portals after teleportation is complete
+        this.scene.time.delayedCall(teleportDuration, () => {
+            portal1.activate();
+            portal2.activate();
+            portal1.setTeleportingState(false);
+            portal2.setTeleportingState(false);
+            this.isTeleporting = false;
+            console.log('Teleportation completed, portals reactivated');
+        });
+    }
+
     private clearPortals(): void {
         for (const portal of this.portals) {
             portal.destroy();
         }
         this.portals = [];
+        this.isTeleporting = false;
+        this.teleportationStartTime = 0;
     }
 
     public getPortals(): Portal[] {
@@ -145,5 +184,20 @@ export class PortalManager {
                 loop: true
             });
         }
+    }
+
+    public isCurrentlyTeleporting(): boolean {
+        return this.isTeleporting;
+    }
+
+    public getTeleportationProgress(): number {
+        if (!this.isTeleporting) return 0;
+        
+        const elapsed = this.scene.time.now - this.teleportationStartTime;
+        const snake = (this.scene as any).snake;
+        const snakeLength = snake ? snake.body.length : 1;
+        const totalDuration = Math.max(1500, snakeLength * 150);
+        
+        return Math.min(1, elapsed / totalDuration);
     }
 } 

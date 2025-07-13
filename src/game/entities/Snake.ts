@@ -124,21 +124,25 @@ export class Snake {
         
         // Check for portal teleportation
         const portalManager = (this.scene as any).portalManager;
-        if (portalManager) {
+        if (portalManager && !portalManager.isCurrentlyTeleporting()) {
             const teleportPos = portalManager.checkTeleportation(newHeadX, newHeadY);
             if (teleportPos) {
                 console.log('Portal teleportation!', teleportPos);
+                
+                // Teleport head to new position immediately
                 this.head.x = teleportPos.x;
                 this.head.y = teleportPos.y;
                 
-                // Move body segments
+                // Move all body segments to follow the teleported head
+                // This ensures the entire snake moves together
                 for (let i = 1; i < this.body.length; i++) {
                     this.body[i].x = oldPositions[i - 1].x;
                     this.body[i].y = oldPositions[i - 1].y;
                 }
                 
-                // Check for self-collision
+                // Check for self-collision after teleportation
                 this.checkSelfCollision();
+                
                 return;
             }
         }
