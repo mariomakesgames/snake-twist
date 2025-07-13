@@ -3,6 +3,7 @@ import { SlowFood } from '../entities/food/bad/SlowFood';
 import { Food } from '../entities/food/Food';
 import { GrowthBoostFood } from '../entities/food/good/GrowthBoostFood';
 import { SpeedBoostFood } from '../entities/food/good/SpeedBoostFood';
+import { PortalManager } from '../entities/items/special/portal/PortalManager';
 import { Snake } from '../entities/Snake';
 import { EventBus } from '../EventBus';
 
@@ -13,6 +14,7 @@ export class SnakeScene extends Phaser.Scene {
     public shrinkFood!: ShrinkFood;
     public speedBoostFood!: SpeedBoostFood;
     public slowFood!: SlowFood;
+    public portalManager!: PortalManager;
     // private cursors: any; // Removed unused variable
     // private scoreText: any; // Removed unused variable
     public gameSpeed: number;
@@ -58,6 +60,9 @@ export class SnakeScene extends Phaser.Scene {
         
         // Create slow food (pink)
         this.slowFood = new SlowFood(this);
+        
+        // Create portal manager
+        this.portalManager = new PortalManager(this);
         
         // Setup input - removed cursors as it's not used
         // this.cursors = this.input.keyboard?.createCursorKeys();
@@ -151,6 +156,10 @@ export class SnakeScene extends Phaser.Scene {
         
         // Start the snake
         this.snake.start();
+        
+        // Start portal manager
+        this.portalManager.start();
+        
         console.log('Snake started, isMoving:', this.snake.isMoving);
         console.log('Snake head position:', this.snake.head.x, this.snake.head.y);
         console.log('Snake direction:', this.snake.direction.x, this.snake.direction.y);
@@ -174,6 +183,9 @@ export class SnakeScene extends Phaser.Scene {
         
         // Reset game speed
         this.gameSpeed = 350;
+        
+        // Stop portal manager
+        this.portalManager.stop();
         
         // Reset snake instead of restarting scene
         this.resetSnake();
@@ -285,6 +297,10 @@ export class SnakeScene extends Phaser.Scene {
         const gameState = (window as any).gameState;
         if (!gameState.isGameOver) {
             gameState.isGameOver = true;
+            
+            // Stop portal manager
+            this.portalManager.stop();
+            
             EventBus.emit('game-over', gameState.score);
         }
     }

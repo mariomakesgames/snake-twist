@@ -122,6 +122,27 @@ export class Snake {
             gridSize: this.scene.scale.width / 30
         });
         
+        // Check for portal teleportation
+        const portalManager = (this.scene as any).portalManager;
+        if (portalManager) {
+            const teleportPos = portalManager.checkTeleportation(newHeadX, newHeadY);
+            if (teleportPos) {
+                console.log('Portal teleportation!', teleportPos);
+                this.head.x = teleportPos.x;
+                this.head.y = teleportPos.y;
+                
+                // Move body segments
+                for (let i = 1; i < this.body.length; i++) {
+                    this.body[i].x = oldPositions[i - 1].x;
+                    this.body[i].y = oldPositions[i - 1].y;
+                }
+                
+                // Check for self-collision
+                this.checkSelfCollision();
+                return;
+            }
+        }
+        
         // Check for wall collision
         if (newHeadX < 0 || newHeadX >= this.scene.scale.width || 
             newHeadY < 0 || newHeadY >= this.scene.scale.height) {
