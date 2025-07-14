@@ -241,6 +241,32 @@ export class SnakeScene extends Phaser.Scene {
         }
     }
 
+    // 添加公共方法来检查游戏状态
+    public isGameActive(): boolean {
+        return this.isGameStarted && !(window as any).gameState?.isGameOver;
+    }
+
+    // 添加公共方法来强制设置暂停状态
+    public setPauseState(paused: boolean): void {
+        const gameState = (window as any).gameState;
+        if (!gameState || gameState.isGameOver || !this.isGameStarted) return;
+        
+        if (gameState.isPaused !== paused) {
+            gameState.isPaused = paused;
+            
+            // Update pause button text
+            const text = this.pauseButton.getAt(1) as Phaser.GameObjects.Text;
+            text.setText(gameState.isPaused ? 'RESUME' : 'PAUSE');
+            
+            // Add pause overlay effect
+            if (gameState.isPaused) {
+                this.createPauseOverlay();
+            } else {
+                this.removePauseOverlay();
+            }
+        }
+    }
+
     private pauseOverlay?: Phaser.GameObjects.Rectangle;
     private pauseText?: Phaser.GameObjects.Text;
 
@@ -259,12 +285,13 @@ export class SnakeScene extends Phaser.Scene {
         this.pauseText = this.add.text(
             this.gameWidth / 2,
             this.gameHeight / 2,
-            'PAUSED',
+            'PAUSED\nTap to Resume',
             {
                 fontSize: '48px',
                 color: '#ffffff',
                 fontFamily: 'Arial',
-                fontStyle: 'bold'
+                fontStyle: 'bold',
+                align: 'center'
             }
         ).setOrigin(0.5);
         
@@ -287,6 +314,21 @@ export class SnakeScene extends Phaser.Scene {
             duration: 300,
             ease: 'Back.easeOut'
         });
+
+        // 添加点击事件处理，让用户可以点击恢复游戏
+        this.pauseOverlay.setInteractive();
+        this.pauseText.setInteractive();
+        
+        const resumeGame = () => {
+            const gameState = (window as any).gameState;
+            if (gameState && gameState.isPaused && !gameState.isGameOver && this.isGameStarted) {
+                console.log('用户点击屏幕恢复游戏');
+                this.togglePause();
+            }
+        };
+        
+        this.pauseOverlay.on('pointerdown', resumeGame);
+        this.pauseText.on('pointerdown', resumeGame);
     }
 
     private removePauseOverlay(): void {
