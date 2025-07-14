@@ -1,3 +1,5 @@
+import { MobileInputManager } from './MobileInputManager';
+
 export class Snake {
     protected scene: Phaser.Scene;
     public body: Phaser.GameObjects.Rectangle[];
@@ -7,6 +9,10 @@ export class Snake {
     private speed: number;
     public isMoving: boolean;
     public head: Phaser.GameObjects.Rectangle;
+    
+    // Mobile input properties
+    private mobileInputManager?: MobileInputManager;
+    private isMobile: boolean = false;
 
     constructor(scene: Phaser.Scene, x: number, y: number) {
         console.log('Creating snake at:', x, y);
@@ -17,6 +23,9 @@ export class Snake {
         this.moveTime = 0;
         this.speed = (scene as any).gameSpeed;
         this.isMoving = false;
+        
+        // Detect mobile device
+        this.isMobile = this.detectMobileDevice();
         
         // Create snake head using graphics - align to grid
         this.head = scene.add.rectangle(x, y, scene.scale.width / 30 - 2, scene.scale.height / 30 - 2, 0x00ff00);
@@ -40,9 +49,17 @@ export class Snake {
         // Setup input handling
         this.setupInput();
         console.log('Snake created with', this.body.length, 'segments');
+        console.log('Mobile device detected:', this.isMobile);
+    }
+
+    private detectMobileDevice(): boolean {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+               ('ontouchstart' in window) ||
+               (navigator.maxTouchPoints > 0);
     }
 
     private setupInput(): void {
+        // Keyboard input (desktop)
         this.scene.input.keyboard?.on('keydown', (event: any) => {
             if (!this.isMoving) return;
             
@@ -65,6 +82,39 @@ export class Snake {
                     }
                     break;
                 case 'ArrowRight':
+                    if (this.direction.x === 0) {
+                        this.nextDirection.set(1, 0);
+                    }
+                    break;
+            }
+        });
+
+        // Touch/Mouse input (mobile and desktop)
+        this.setupMobileInput();
+    }
+
+    private setupMobileInput(): void {
+        this.mobileInputManager = new MobileInputManager(this.scene);
+        this.mobileInputManager.setSwipeCallback((direction: string) => {
+            if (!this.isMoving) return;
+            
+            switch (direction) {
+                case 'up':
+                    if (this.direction.y === 0) {
+                        this.nextDirection.set(0, -1);
+                    }
+                    break;
+                case 'down':
+                    if (this.direction.y === 0) {
+                        this.nextDirection.set(0, 1);
+                    }
+                    break;
+                case 'left':
+                    if (this.direction.x === 0) {
+                        this.nextDirection.set(-1, 0);
+                    }
+                    break;
+                case 'right':
                     if (this.direction.x === 0) {
                         this.nextDirection.set(1, 0);
                     }
@@ -206,5 +256,17 @@ export class Snake {
         console.log(`Snake shrunk by ${segments} segments! Total segments: ${this.body.length}`);
     }
 
-
+    public destroy(): void {
+        // Clean up mobile input manager
+        if (this.mobileInputManager) {
+            this.mobileInputManager.destroy();
+            this.mobileInputManager = undefined;
+        }
+        
+        // Clean up body segments
+        this.body.forEach(segment => {
+            segment.destroy();
+        });
+        this.body = [];
+    }
 } 

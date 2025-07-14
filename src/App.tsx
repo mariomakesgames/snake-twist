@@ -26,6 +26,26 @@ function App()
         };
     }, [highScore]);
 
+    useEffect(() => {
+        // Detect mobile device and show appropriate instructions
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                         ('ontouchstart' in window) ||
+                         (navigator.maxTouchPoints > 0);
+        
+        if (isMobile) {
+            const mobileInstructions = document.querySelector('.mobile-instructions');
+            const desktopInstructions = document.querySelector('.instructions p');
+            
+            if (mobileInstructions) {
+                mobileInstructions.setAttribute('style', 'display: block');
+            }
+            
+            if (desktopInstructions) {
+                desktopInstructions.setAttribute('style', 'display: none');
+            }
+        }
+    }, []);
+
     return (
         <div className="game-container">
             <div className="header-row">
@@ -43,9 +63,17 @@ function App()
             <PhaserGame ref={phaserRef} currentActiveScene={currentScene} />
 
             <div className="instructions">
-                <p>Use arrow keys to control the snake</p>
+                <p>Use arrow keys or mouse swipe to control the snake</p>
                 <p>Eat food to grow and increase your score</p>
                 <p>Avoid walls and your own body!</p>
+                <div className="mobile-instructions" style={{ display: 'none' }}>
+                    <p>📱 Mobile: Swipe to control the snake</p>
+                    <p>💡 Tap and drag in any direction to move</p>
+                </div>
+                <div className="desktop-instructions">
+                    <p>🖱️ Desktop: Click and drag to swipe</p>
+                    <p>💡 Hold left mouse button and drag in any direction</p>
+                </div>
             </div>
         </div>
     )

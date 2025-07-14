@@ -39,6 +39,11 @@ function updateUI(): void {
 // Initialize UI
 updateUI();
 
+// Detect mobile device
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                 ('ontouchstart' in window) ||
+                 (navigator.maxTouchPoints > 0);
+
 // Game configuration
 const config: GameConfig = {
     type: AUTO,
@@ -57,6 +62,10 @@ const config: GameConfig = {
     render: {
         pixelArt: false,
         antialias: true
+    },
+    scale: {
+        mode: Phaser.Scale.NONE,
+        autoCenter: Phaser.Scale.CENTER_BOTH
     }
 };
 

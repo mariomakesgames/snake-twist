@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Size Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .test-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            text-align: center;
+            max-width: 800px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .canvas-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            font-family: monospace;
+            text-align: left;
+        }
+
+        .canvas-info h3 {
+            color: #4CAF50;
+            margin-bottom: 15px;
+        }
+
+        .canvas-info p {
+            margin: 10px 0;
+            padding: 5px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+        }
+
+        .test-canvas {
+            width: 600px;
+            height: 600px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            margin: 20px auto;
+            background: #222222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2em;
+            color: #4CAF50;
+        }
+
+        .controls {
+            margin: 20px 0;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .status {
+            background: rgba(33, 150, 243, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #2196F3;
+        }
+
+        @media (max-width: 768px) {
+            .test-container {
+                padding: 20px;
+                margin: 10px;
+            }
+
+            .test-canvas {
+                width: 100%;
+                max-width: 600px;
+                height: auto;
+                aspect-ratio: 1;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎯 Canvas尺寸测试</h1>
+        
+        <div class="status">
+            <h3>📊 测试目的</h3>
+            <p>验证canvas容器是否保持稳定的600x600像素尺寸，防止页面刷新后逐渐缩小的问题。</p>
+        </div>
+
+        <div class="test-canvas" id="testCanvas">
+            <div>600 x 600 像素测试区域</div>
+        </div>
+
+        <div class="canvas-info" id="canvasInfo">
+            <h3>📏 尺寸信息</h3>
+            <p id="sizeInfo">正在检测...</p>
+            <p id="styleInfo">正在检测样式...</p>
+            <p id="computedInfo">正在检测计算样式...</p>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="refreshInfo()">🔄 刷新信息</button>
+            <button class="btn" onclick="simulateResize()">📱 模拟窗口变化</button>
+            <button class="btn" onclick="forceResize()">⚡ 强制修复尺寸</button>
+        </div>
+
+        <div class="status">
+            <h3>🔧 修复措施</h3>
+            <ul style="text-align: left; margin: 10px 0;">
+                <li>✅ 固定游戏配置为600x600像素</li>
+                <li>✅ 使用!important强制CSS样式</li>
+                <li>✅ JavaScript实时监控尺寸变化</li>
+                <li>✅ 移动端响应式适配</li>
+                <li>✅ 防止其他样式干扰</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        class CanvasSizeTester {
+            constructor() {
+                this.canvas = document.getElementById('testCanvas');
+                this.sizeInfo = document.getElementById('sizeInfo');
+                this.styleInfo = document.getElementById('styleInfo');
+                this.computedInfo = document.getElementById('computedInfo');
+                
+                this.updateInfo();
+                this.startMonitoring();
+            }
+            
+            updateInfo() {
+                // 获取元素尺寸
+                const rect = this.canvas.getBoundingClientRect();
+                this.sizeInfo.textContent = `元素尺寸: ${Math.round(rect.width)} x ${Math.round(rect.height)} 像素`;
+                
+                // 获取内联样式
+                const style = this.canvas.style;
+                this.styleInfo.textContent = `内联样式: width=${style.width}, height=${style.height}`;
+                
+                // 获取计算样式
+                const computed = window.getComputedStyle(this.canvas);
+                this.computedInfo.textContent = `计算样式: width=${computed.width}, height=${computed.height}`;
+            }
+            
+            startMonitoring() {
+                // 监听窗口大小变化
+                window.addEventListener('resize', () => {
+                    setTimeout(() => this.updateInfo(), 100);
+                });
+                
+                // 定期检查尺寸
+                setInterval(() => {
+                    this.updateInfo();
+                }, 2000);
+            }
+            
+            forceResize() {
+                this.canvas.style.width = '600px';
+                this.canvas.style.height = '600px';
+                this.canvas.style.minWidth = '600px';
+                this.canvas.style.minHeight = '600px';
+                this.canvas.style.maxWidth = '600px';
+                this.canvas.style.maxHeight = '600px';
+                
+                setTimeout(() => this.updateInfo(), 100);
+            }
+        }
+        
+        // 全局函数
+        function refreshInfo() {
+            tester.updateInfo();
+        }
+        
+        function simulateResize() {
+            // 模拟窗口大小变化
+            const originalWidth = window.innerWidth;
+            window.resizeTo(800, 600);
+            setTimeout(() => {
+                window.resizeTo(originalWidth, window.innerHeight);
+                setTimeout(() => tester.updateInfo(), 100);
+            }, 500);
+        }
+        
+        function forceResize() {
+            tester.forceResize();
+        }
+        
+        // 初始化测试器
+        let tester;
+        document.addEventListener('DOMContentLoaded', () => {
+            tester = new CanvasSizeTester();
+        });
+    </script>
+</body>
+</html> 

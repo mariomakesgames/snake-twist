@@ -85,6 +85,9 @@ export class SnakeScene extends Phaser.Scene {
         // Setup pause button
         this.createPauseButton();
         
+        // Create mobile controls if on mobile device
+        this.createMobileControls();
+        
         // Auto start the game
         this.autoStartGame();
         
@@ -438,6 +441,11 @@ export class SnakeScene extends Phaser.Scene {
             // Stop portal manager
             this.portalManager.stop();
             
+            // Clean up snake
+            if (this.snake) {
+                this.snake.destroy();
+            }
+            
             // Create particle effect for game over
             this.createGameOverParticles();
             
@@ -521,28 +529,30 @@ export class SnakeScene extends Phaser.Scene {
         // Make the rectangle itself interactive
         background.setInteractive();
 
-        // Add hover effects
-        background.on('pointerover', () => {
-            this.tweens.add({
-                targets: this.pauseButton,
-                scaleX: 1.05,
-                scaleY: 1.05,
-                duration: 150,
-                ease: 'Power2'
+        // Add hover effects (desktop only)
+        if (!this.isMobileDevice()) {
+            background.on('pointerover', () => {
+                this.tweens.add({
+                    targets: this.pauseButton,
+                    scaleX: 1.05,
+                    scaleY: 1.05,
+                    duration: 150,
+                    ease: 'Power2'
+                });
+                background.setFillStyle(0xFFB74D);
             });
-            background.setFillStyle(0xFFB74D);
-        });
 
-        background.on('pointerout', () => {
-            this.tweens.add({
-                targets: this.pauseButton,
-                scaleX: 1,
-                scaleY: 1,
-                duration: 150,
-                ease: 'Power2'
+            background.on('pointerout', () => {
+                this.tweens.add({
+                    targets: this.pauseButton,
+                    scaleX: 1,
+                    scaleY: 1,
+                    duration: 150,
+                    ease: 'Power2'
+                });
+                background.setFillStyle(0xFF9800);
             });
-            background.setFillStyle(0xFF9800);
-        });
+        }
 
         // Add click effect
         background.on('pointerdown', () => {
@@ -561,4 +571,91 @@ export class SnakeScene extends Phaser.Scene {
             this.togglePause();
         });
     }
+
+    private isMobileDevice(): boolean {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+               ('ontouchstart' in window) ||
+               (navigator.maxTouchPoints > 0);
+    }
+
+    private createMobileControls(): void {
+        // Create swipe instruction text for both mobile and desktop
+        const instructionText = this.add.text(
+            this.gameWidth / 2,
+            this.gameHeight + 20,
+            this.isMobileDevice() ? 'Swipe to control the snake' : 'Click and drag to control the snake',
+            {
+                fontSize: '16px',
+                color: '#ffffff',
+                fontFamily: 'Arial',
+                backgroundColor: '#333333',
+                padding: { x: 10, y: 5 }
+            }
+        ).setOrigin(0.5);
+
+        // Create direction indicators (only for mobile)
+        if (this.isMobileDevice()) {
+            const indicatorSize = 40;
+            const indicatorColor = 0x4CAF50;
+            const indicatorAlpha = 0.3;
+
+            // Up arrow
+            const upArrow = this.add.graphics();
+            upArrow.fillStyle(indicatorColor, indicatorAlpha);
+            upArrow.fillTriangle(
+                this.gameWidth / 2, this.gameHeight + 80,
+                this.gameWidth / 2 - 15, this.gameHeight + 100,
+                this.gameWidth / 2 + 15, this.gameHeight + 100
+            );
+
+            // Down arrow
+            const downArrow = this.add.graphics();
+            downArrow.fillStyle(indicatorColor, indicatorAlpha);
+            downArrow.fillTriangle(
+                this.gameWidth / 2, this.gameHeight + 120,
+                this.gameWidth / 2 - 15, this.gameHeight + 100,
+                this.gameWidth / 2 + 15, this.gameHeight + 100
+            );
+
+            // Left arrow
+            const leftArrow = this.add.graphics();
+            leftArrow.fillStyle(indicatorColor, indicatorAlpha);
+            leftArrow.fillTriangle(
+                this.gameWidth / 2 - 20, this.gameHeight + 110,
+                this.gameWidth / 2, this.gameHeight + 95,
+                this.gameWidth / 2, this.gameHeight + 125
+            );
+
+            // Right arrow
+            const rightArrow = this.add.graphics();
+            rightArrow.fillStyle(indicatorColor, indicatorAlpha);
+            rightArrow.fillTriangle(
+                this.gameWidth / 2 + 20, this.gameHeight + 110,
+                this.gameWidth / 2, this.gameHeight + 95,
+                this.gameWidth / 2, this.gameHeight + 125
+            );
+
+            // Store references for cleanup
+            this.mobileControls = {
+                instructionText,
+                upArrow,
+                downArrow,
+                leftArrow,
+                rightArrow
+            };
+        } else {
+            // For desktop, only store the instruction text
+            this.mobileControls = {
+                instructionText
+            };
+        }
+    }
+
+    private mobileControls?: {
+        instructionText: Phaser.GameObjects.Text;
+        upArrow?: Phaser.GameObjects.Graphics;
+        downArrow?: Phaser.GameObjects.Graphics;
+        leftArrow?: Phaser.GameObjects.Graphics;
+        rightArrow?: Phaser.GameObjects.Graphics;
+    };
 } 
