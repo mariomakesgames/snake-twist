@@ -9,41 +9,112 @@ export class MobileInputManager {
     private touchStartTime: number = 0;
     private onSwipeCallback?: (direction: string) => void;
     private isEnabled: boolean = true;
+    private isDragging: boolean = false;
 
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
-        this.setupTouchInput();
+        this.setupGlobalInput();
     }
 
-    private setupTouchInput(): void {
-        // Touch/Mouse start event
-        this.scene.input.on('pointerdown', (pointer: any) => {
-            if (!this.isEnabled) return;
+    private setupGlobalInput(): void {
+        // Use only global event listeners to avoid conflicts
+        // Mouse events
+        document.addEventListener('mousedown', this.handleGlobalMouseDown);
+        document.addEventListener('mouseup', this.handleGlobalMouseUp);
+        document.addEventListener('mousemove', this.handleGlobalMouseMove);
+        
+        // Touch events
+        document.addEventListener('touchstart', this.handleGlobalTouchStart);
+        document.addEventListener('touchend', this.handleGlobalTouchEnd);
+        document.addEventListener('touchmove', this.handleGlobalTouchMove);
+    }
+
+    private handleGlobalMouseDown = (event: MouseEvent): void => {
+        if (!this.isEnabled || this.isDragging) return;
+        
+        // Check if the click is within the canvas bounds
+        const canvas = this.scene.game.canvas;
+        const rect = canvas.getBoundingClientRect();
+        
+        if (event.clientX >= rect.left && event.clientX <= rect.right &&
+            event.clientY >= rect.top && event.clientY <= rect.bottom) {
             
-            this.touchStartX = pointer.x;
-            this.touchStartY = pointer.y;
+            this.isDragging = true;
+            this.touchStartX = event.clientX - rect.left;
+            this.touchStartY = event.clientY - rect.top;
             this.touchStartTime = Date.now();
-        });
+        }
+    };
 
-        // Touch/Mouse end event
-        this.scene.input.on('pointerup', (pointer: any) => {
-            if (!this.isEnabled) return;
-            
-            this.touchEndX = pointer.x;
-            this.touchEndY = pointer.y;
-            
-            this.handleSwipe();
-        });
+    private handleGlobalMouseUp = (event: MouseEvent): void => {
+        if (!this.isEnabled || !this.isDragging) return;
+        
+        // Convert global coordinates to canvas coordinates
+        const canvas = this.scene.game.canvas;
+        const rect = canvas.getBoundingClientRect();
+        
+        this.touchEndX = event.clientX - rect.left;
+        this.touchEndY = event.clientY - rect.top;
+        
+        this.handleSwipe();
+        this.isDragging = false;
+    };
 
-        // Touch/Mouse move event (for better swipe detection)
-        this.scene.input.on('pointermove', (pointer: any) => {
-            if (!this.isEnabled) return;
+    private handleGlobalTouchStart = (event: TouchEvent): void => {
+        if (!this.isEnabled || this.isDragging) return;
+        
+        // Check if the touch is within the canvas bounds
+        const canvas = this.scene.game.canvas;
+        const rect = canvas.getBoundingClientRect();
+        const touch = event.touches[0];
+        
+        if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
+            touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
             
-            // Update touch end position during movement
-            this.touchEndX = pointer.x;
-            this.touchEndY = pointer.y;
-        });
-    }
+            this.isDragging = true;
+            this.touchStartX = touch.clientX - rect.left;
+            this.touchStartY = touch.clientY - rect.top;
+            this.touchStartTime = Date.now();
+        }
+    };
+
+    private handleGlobalTouchEnd = (event: TouchEvent): void => {
+        if (!this.isEnabled || !this.isDragging) return;
+        
+        // Convert global coordinates to canvas coordinates
+        const canvas = this.scene.game.canvas;
+        const rect = canvas.getBoundingClientRect();
+        const touch = event.changedTouches[0];
+        
+        this.touchEndX = touch.clientX - rect.left;
+        this.touchEndY = touch.clientY - rect.top;
+        
+        this.handleSwipe();
+        this.isDragging = false;
+    };
+
+    private handleGlobalMouseMove = (event: MouseEvent): void => {
+        if (!this.isEnabled || !this.isDragging) return;
+        
+        // Update touch end position during global movement
+        const canvas = this.scene.game.canvas;
+        const rect = canvas.getBoundingClientRect();
+        
+        this.touchEndX = event.clientX - rect.left;
+        this.touchEndY = event.clientY - rect.top;
+    };
+
+    private handleGlobalTouchMove = (event: TouchEvent): void => {
+        if (!this.isEnabled || !this.isDragging) return;
+        
+        // Update touch end position during global movement
+        const canvas = this.scene.game.canvas;
+        const rect = canvas.getBoundingClientRect();
+        const touch = event.touches[0];
+        
+        this.touchEndX = touch.clientX - rect.left;
+        this.touchEndY = touch.clientY - rect.top;
+    };
 
     private handleSwipe(): void {
         const deltaX = this.touchEndX - this.touchStartX;
@@ -144,9 +215,12 @@ export class MobileInputManager {
     }
 
     public destroy(): void {
-        // Clean up event listeners
-        this.scene.input.off('pointerdown');
-        this.scene.input.off('pointerup');
-        this.scene.input.off('pointermove');
+        // Clean up global listeners only
+        document.removeEventListener('mousedown', this.handleGlobalMouseDown);
+        document.removeEventListener('mouseup', this.handleGlobalMouseUp);
+        document.removeEventListener('mousemove', this.handleGlobalMouseMove);
+        document.removeEventListener('touchstart', this.handleGlobalTouchStart);
+        document.removeEventListener('touchend', this.handleGlobalTouchEnd);
+        document.removeEventListener('touchmove', this.handleGlobalTouchMove);
     }
 } 
