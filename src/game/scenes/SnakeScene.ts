@@ -5,6 +5,7 @@ import { GrowthBoostFood } from '../entities/food/good/GrowthBoostFood';
 import { SpeedBoostFood } from '../entities/food/good/SpeedBoostFood';
 import { PortalManager } from '../entities/items/special/portal/PortalManager';
 import { ScoreIndicator } from '../entities/ScoreIndicator';
+import { SegmentDrop } from '../entities/SegmentDrop';
 import { Snake } from '../entities/Snake';
 import { EventBus } from '../EventBus';
 import { FoodTutorialManager } from '../tutorial/FoodTutorialManager';
@@ -31,6 +32,9 @@ export class SnakeScene extends Phaser.Scene {
     
     // Score Indicator
     private scoreIndicator!: ScoreIndicator;
+    
+    // Segment Drops
+    private segmentDrops: SegmentDrop[] = [];
 
     constructor() {
         super({ key: 'SnakeScene' });
@@ -89,6 +93,9 @@ export class SnakeScene extends Phaser.Scene {
         this.physics.add.overlap(this.snake.head, this.shrinkFood.sprite, this.eatShrinkFood, undefined, this);
         this.physics.add.overlap(this.snake.head, this.speedBoostFood.sprite, this.eatSpeedBoostFood, undefined, this);
         this.physics.add.overlap(this.snake.head, this.slowFood.sprite, this.eatSlowFood, undefined, this);
+        
+        // Setup segment drop collision detection (will be updated when drops are created)
+        this.setupSegmentDropCollisions();
         
         // Setup wall collision - enable world bounds
         this.physics.world.setBounds(0, 0, this.gameWidth, this.gameHeight);
@@ -543,6 +550,9 @@ export class SnakeScene extends Phaser.Scene {
                 console.log('Saved snake length:', gameState.savedSnakeLength);
             }
             
+            // Create segment drops
+            this.createSegmentDrops();
+            
             // Stop portal manager
             this.portalManager.stop();
             
@@ -581,11 +591,139 @@ export class SnakeScene extends Phaser.Scene {
             
             EventBus.emit('game-over', gameState.score);
             
+            // Store segment drops data for revival
+            gameState.segmentDropsData = this.segmentDrops.map(drop => ({
+                x: drop.sprite.x,
+                y: drop.sprite.y,
+                value: drop.value
+            }));
+            
             // Switch to game over scene after a short delay
             this.time.delayedCall(1000, () => {
                 this.scene.start('GameOverScene', { score: gameState.score });
             });
         }
+    }
+
+    private createSegmentDrops(): void {
+        if (!this.snake) return;
+        
+        const totalSegments = this.snake.body.length;
+        const dropCount = Math.max(1, Math.min(5, Math.floor(totalSegments / 3)));
+        
+        console.log(`Creating ${dropCount} segment drops from ${totalSegments} total segments`);
+        
+        // Clear existing drops
+        this.clearSegmentDrops();
+        
+        // Get death position (where the collision happened)
+        const deathX = this.snake.head.x;
+        const deathY = this.snake.head.y;
+        
+        // Create new drops around the death position
+        for (let i = 0; i < dropCount; i++) {
+            const angle = (i / dropCount) * Math.PI * 2;
+            const distance = 60 + Math.random() * 40;
+            const x = deathX + Math.cos(angle) * distance;
+            const y = deathY + Math.sin(angle) * distance;
+            
+            // Ensure drops are within game bounds
+            const clampedX = Math.max(20, Math.min(this.gameWidth - 20, x));
+            const clampedY = Math.max(20, Math.min(this.gameHeight - 20, y));
+            
+            const segmentDrop = new SegmentDrop(this, clampedX, clampedY, 1);
+            this.segmentDrops.push(segmentDrop);
+            
+            // Add collision detection for this segment drop
+            if (this.snake && this.snake.head) {
+                this.physics.add.overlap(this.snake.head, segmentDrop.sprite, () => {
+                    this.collectSegmentDrop(segmentDrop);
+                }, undefined, this);
+            }
+        }
+    }
+    
+    private clearSegmentDrops(): void {
+        this.segmentDrops.forEach(drop => drop.destroy());
+        this.segmentDrops = [];
+    }
+    
+    private recreateSegmentDrops(): void {
+        const gameState = (window as any).gameState;
+        if (!gameState.segmentDropsData) return;
+        
+        console.log('Recreating segment drops from saved data');
+        
+        // Clear existing drops
+        this.clearSegmentDrops();
+        
+        // Recreate drops from saved data
+        gameState.segmentDropsData.forEach((dropData: any) => {
+            const segmentDrop = new SegmentDrop(this, dropData.x, dropData.y, dropData.value);
+            this.segmentDrops.push(segmentDrop);
+        });
+        
+        // Clear the saved data
+        gameState.segmentDropsData = null;
+        
+        console.log(`Recreated ${this.segmentDrops.length} segment drops`);
+    }
+    
+    private setupSegmentDropCollisions(): void {
+        // Setup collision detection for all existing segment drops
+        this.segmentDrops.forEach(segmentDrop => {
+            this.physics.add.overlap(this.snake.head, segmentDrop.sprite, () => {
+                this.collectSegmentDrop(segmentDrop);
+            }, undefined, this);
+        });
+    }
+    
+    private collectSegmentDrop(segmentDrop: SegmentDrop): void {
+        const collected = segmentDrop.collect();
+        if (collected > 0) {
+            console.log(`Collected segment drop: +${collected}`);
+            
+            // Grow snake immediately
+            if (this.snake) {
+                this.snake.grow(collected);
+                
+                // Show collection indicator
+                if (this.scoreIndicator) {
+                    this.scoreIndicator.showEffectIndicator(
+                        this.snake.head.x, 
+                        this.snake.head.y + 30, 
+                        `+${collected}🟩`, 
+                        '#4CAF50'
+                    );
+                }
+            }
+            
+            // Remove from array
+            const index = this.segmentDrops.indexOf(segmentDrop);
+            if (index > -1) {
+                this.segmentDrops.splice(index, 1);
+            }
+        }
+    }
+    
+    private collectSegmentDrops(): void {
+        let totalCollected = 0;
+        
+        this.segmentDrops.forEach(drop => {
+            const collected = drop.collect();
+            totalCollected += collected;
+        });
+        
+        if (totalCollected > 0) {
+            console.log(`Collected ${totalCollected} segment drops`);
+            
+            // Store the collected count to apply after snake is recreated
+            const gameState = (window as any).gameState;
+            gameState.collectedSegments = totalCollected;
+        }
+        
+        // Clear the drops array
+        this.segmentDrops = [];
     }
 
     private createGameOverParticles(): void {
@@ -778,8 +916,14 @@ export class SnakeScene extends Phaser.Scene {
         console.log('Reviving game...');
         const gameState = (window as any).gameState;
         
+        // Recreate segment drops from saved data
+        this.recreateSegmentDrops();
+        
         // Reset snake position and state but keep score
         this.resetSnake();
+        
+        // Re-setup collision detection for segment drops with the new snake head
+        this.setupSegmentDropCollisions();
         
         // Restore snake length if saved
         if (gameState.savedSnakeLength && gameState.savedSnakeLength > 3) {
@@ -793,6 +937,8 @@ export class SnakeScene extends Phaser.Scene {
                 console.log(`Restored snake length from ${currentLength} to ${targetLength} (added ${segmentsToAdd} segments)`);
             }
         }
+        
+        // Segment drops remain on the ground for manual pickup
         
         // Start the snake
         this.snake.start();
