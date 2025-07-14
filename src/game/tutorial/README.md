@@ -79,7 +79,9 @@ foodTutorialManager.getTotalTutorialCount();
 // 游戏暂停/恢复（内部方法）
 foodTutorialManager.pauseGame();  // 暂停游戏
 foodTutorialManager.resumeGame(); // 恢复游戏
-```
+
+// 教程状态检查
+foodTutorialManager.isTutorialActive(); // 检查是否正在显示教程
 
 ### localStorage 存储
 
@@ -149,6 +151,7 @@ public gameOver(): void {
 - 显示教程时自动暂停游戏
 - 隐藏教程时自动恢复游戏
 - 支持连续显示多个教程（只暂停一次）
+- 显示教程时暂停传送门生成，保持传送门位置不变
 
 ### 响应式设计
 - 适配不同屏幕尺寸
