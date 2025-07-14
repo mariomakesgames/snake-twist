@@ -19,11 +19,11 @@
         
         // 设置固定尺寸
         canvas.style.width = '600px';
-        canvas.style.height = '600px';
+        canvas.style.height = '800px';
         canvas.style.minWidth = '600px';
-        canvas.style.minHeight = '600px';
+        canvas.style.minHeight = '800px';
         canvas.style.maxWidth = '600px';
-        canvas.style.maxHeight = '600px';
+        canvas.style.maxHeight = '800px';
         canvas.style.display = 'block';
         canvas.style.margin = '0 auto';
         
@@ -31,11 +31,11 @@
         const container = document.getElementById('gameCanvas');
         if (container) {
             container.style.width = '600px';
-            container.style.height = '600px';
+            container.style.height = '800px';
             container.style.minWidth = '600px';
-            container.style.minHeight = '600px';
+            container.style.minHeight = '800px';
             container.style.maxWidth = '600px';
-            container.style.maxHeight = '600px';
+            container.style.maxHeight = '800px';
             container.style.display = 'flex';
             container.style.justifyContent = 'center';
             container.style.alignItems = 'center';
@@ -83,21 +83,23 @@
             
             if (canvas && container) {
                 const maxWidth = Math.min(600, window.innerWidth - 40);
-                const size = Math.min(maxWidth, window.innerHeight - 200);
+                const maxHeight = Math.min(800, window.innerHeight - 200);
+                const width = maxWidth;
+                const height = Math.min(maxHeight, width * 4/3); // 保持3:4比例
                 
-                canvas.style.width = size + 'px';
-                canvas.style.height = size + 'px';
-                canvas.style.minWidth = size + 'px';
-                canvas.style.minHeight = size + 'px';
-                canvas.style.maxWidth = size + 'px';
-                canvas.style.maxHeight = size + 'px';
+                canvas.style.width = width + 'px';
+                canvas.style.height = height + 'px';
+                canvas.style.minWidth = width + 'px';
+                canvas.style.minHeight = height + 'px';
+                canvas.style.maxWidth = width + 'px';
+                canvas.style.maxHeight = height + 'px';
                 
-                container.style.width = size + 'px';
-                container.style.height = size + 'px';
-                container.style.minWidth = size + 'px';
-                container.style.minHeight = size + 'px';
-                container.style.maxWidth = size + 'px';
-                container.style.maxHeight = size + 'px';
+                container.style.width = width + 'px';
+                container.style.height = height + 'px';
+                container.style.minWidth = width + 'px';
+                container.style.minHeight = height + 'px';
+                container.style.maxWidth = width + 'px';
+                container.style.maxHeight = height + 'px';
             }
         }
     }
@@ -121,7 +123,7 @@
             const width = parseInt(computedStyle.width);
             const height = parseInt(computedStyle.height);
             
-            if (width !== 600 || height !== 600) {
+            if (width !== 600 || height !== 800) {
                 console.log('Canvas size changed, fixing...', width, height);
                 fixCanvasSize(canvas);
             }

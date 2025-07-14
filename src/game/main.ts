@@ -48,7 +48,7 @@ const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/
 const config: GameConfig = {
     type: AUTO,
     width: 600,
-    height: 600,
+    height: 800,
     parent: 'gameCanvas',
     backgroundColor: '#222222',
     physics: {

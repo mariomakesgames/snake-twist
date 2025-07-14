@@ -3,8 +3,8 @@
     width: 100% !important;
     max-width: 600px !important;
     height: auto !important;
-    aspect-ratio: 1 !important;
-    min-height: 300px !important;
+    aspect-ratio: 3/4 !important;
+    min-height: 400px !important;
     border: 3px solid rgba(255, 255, 255, 0.3);
     border-radius: 10px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);

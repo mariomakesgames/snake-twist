@@ -33,7 +33,7 @@ export class SnakeScene extends Phaser.Scene {
         this.gameSpeed = 350;
         this.gridSize = 20;
         this.gameWidth = 600;
-        this.gameHeight = 600;
+        this.gameHeight = 800;
     }
 
     public preload(): void {
@@ -148,7 +148,7 @@ export class SnakeScene extends Phaser.Scene {
         
         // Reset body segments
         for (let i = 1; i < this.snake.body.length; i++) {
-            const segmentX = centerX - i * (this.gameWidth / 30);
+            const segmentX = centerX - i * this.gridSize;
             const segmentY = centerY;
             this.snake.body[i].setPosition(segmentX, segmentY);
         }
