@@ -6,6 +6,7 @@ import { SpeedBoostFood } from '../entities/food/good/SpeedBoostFood';
 import { PortalManager } from '../entities/items/special/portal/PortalManager';
 import { Snake } from '../entities/Snake';
 import { EventBus } from '../EventBus';
+import { FoodTutorialManager } from '../tutorial/FoodTutorialManager';
 
 export class SnakeScene extends Phaser.Scene {
     public snake!: Snake;
@@ -23,6 +24,9 @@ export class SnakeScene extends Phaser.Scene {
     // UI Elements
     private pauseButton!: Phaser.GameObjects.Container;
     private isGameStarted: boolean = false;
+    
+    // Tutorial
+    private foodTutorialManager!: FoodTutorialManager;
 
     constructor() {
         super({ key: 'SnakeScene' });
@@ -68,6 +72,9 @@ export class SnakeScene extends Phaser.Scene {
         
         // Create portal manager
         this.portalManager = new PortalManager(this);
+        
+        // Initialize tutorial manager
+        this.foodTutorialManager = new FoodTutorialManager(this);
         
         // Setup collision detection
         this.physics.add.overlap(this.snake.head, this.food.sprite, this.eatFood, undefined, this);
@@ -349,6 +356,9 @@ export class SnakeScene extends Phaser.Scene {
         this.snake.grow(1); // Grow by 1 segment
         this.food.reposition();
         
+        // Show tutorial for regular food if not shown before
+        this.foodTutorialManager.showTutorial('regular-food');
+        
         const gameState = (window as any).gameState;
         gameState.score += 10;
         if (gameState.score > gameState.highScore) {
@@ -369,6 +379,9 @@ export class SnakeScene extends Phaser.Scene {
         console.log('Growth boost food eaten!');
         this.snake.grow(5); // Grow by 5 segments
         this.growthBoostFood.reposition();
+        
+        // Show tutorial for growth boost food if not shown before
+        this.foodTutorialManager.showTutorial('growth-boost');
         
         const gameState = (window as any).gameState;
         gameState.score += 50; // Higher score for growth boost food
@@ -391,6 +404,9 @@ export class SnakeScene extends Phaser.Scene {
         this.snake.shrink(1); // Shrink by 1 segment
         this.shrinkFood.reposition();
         
+        // Show tutorial for shrink food if not shown before
+        this.foodTutorialManager.showTutorial('shrink-food');
+        
         const gameState = (window as any).gameState;
         gameState.score -= 10; // Lower score for shrink food
         if (gameState.score < 0) gameState.score = 0; // Ensure score doesn't go below 0
@@ -405,6 +421,9 @@ export class SnakeScene extends Phaser.Scene {
         console.log('Speed boost food eaten!');
         this.snake.grow(1); // Grow by 1 segment
         this.speedBoostFood.reposition();
+        
+        // Show tutorial for speed boost food if not shown before
+        this.foodTutorialManager.showTutorial('speed-boost');
         
         const gameState = (window as any).gameState;
         gameState.score += 15; // Higher score for speed boost food
@@ -425,6 +444,9 @@ export class SnakeScene extends Phaser.Scene {
         console.log('Slow food eaten!');
         this.snake.grow(1); // Grow by 1 segment
         this.slowFood.reposition();
+        
+        // Show tutorial for slow food if not shown before
+        this.foodTutorialManager.showTutorial('slow-food');
         
         const gameState = (window as any).gameState;
         gameState.score += 5; // Lower score for slow food
@@ -459,6 +481,11 @@ export class SnakeScene extends Phaser.Scene {
             // Clean up snake
             if (this.snake) {
                 this.snake.destroy();
+            }
+            
+            // Clean up tutorial manager
+            if (this.foodTutorialManager) {
+                this.foodTutorialManager.destroy();
             }
             
             // Create particle effect for game over
