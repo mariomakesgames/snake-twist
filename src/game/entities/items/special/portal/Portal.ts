@@ -28,6 +28,13 @@ export class Portal {
     }
 
     private startRotation(): void {
+        this.startNormalRotation();
+    }
+
+    private startNormalRotation(): void {
+        if (this.rotationTween) {
+            this.rotationTween.stop();
+        }
         this.rotationTween = this.scene.tweens.add({
             targets: this.sprite,
             angle: 360,
@@ -36,6 +43,21 @@ export class Portal {
             loop: -1
         });
     }
+
+    private startFastRotation(): void {
+        if (this.rotationTween) {
+            this.rotationTween.stop();
+        }
+        this.rotationTween = this.scene.tweens.add({
+            targets: this.sprite,
+            angle: 360,
+            duration: 500, // 快速旋转，0.5秒一圈
+            ease: 'Linear',
+            loop: -1
+        });
+    }
+
+
 
     public setTarget(target: Portal): void {
         this.targetPortal = target;
@@ -58,13 +80,6 @@ export class Portal {
         if (this.targetPortal) {
             this.targetPortal.teleportingSnake = teleporting;
         }
-        
-        // Removed green effect calls
-        // if (teleporting) {
-        //     this.showTeleportEffect();
-        // } else {
-        //     this.hideTeleportEffect();
-        // }
     }
 
     // Removed showTeleportEffect method
@@ -78,14 +93,13 @@ export class Portal {
         if (this.rotationTween) {
             this.rotationTween.stop();
         }
-        this.sprite.setAlpha(0.3); // Make portal semi-transparent when inactive
-        // this.hideTeleportEffect(); // Removed
+        // 传送时不改变透明度，保持完全不透明
     }
 
     public activate(): void {
         this.isActive = true;
         this.sprite.setAlpha(1);
-        this.startRotation();
+        this.startNormalRotation();
     }
 
     public destroy(): void {
