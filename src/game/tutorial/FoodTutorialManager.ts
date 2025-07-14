@@ -68,6 +68,15 @@ export class FoodTutorialManager {
                 color: 0xff88ff,
                 icon: '🐌',
                 shown: false
+            },
+            {
+                id: 'portal',
+                name: 'Portal',
+                description: 'Purple portals that teleport your snake to another location',
+                effect: 'Instant teleportation, temporary cooldown',
+                color: 0x9b59b6,
+                icon: '🌀',
+                shown: false
             }
         ];
     }

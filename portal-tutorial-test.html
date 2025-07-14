@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snake Game - Food Tutorial Test</title>
+    <title>Snake Game - Portal Tutorial Test</title>
     <style>
         body {
             margin: 0;
@@ -20,7 +20,7 @@
         
         h1 {
             text-align: center;
-            color: #4CAF50;
+            color: #9B59B6;
             margin-bottom: 20px;
         }
         
@@ -53,11 +53,6 @@
             margin: 20px 0;
         }
         
-        #game-canvas {
-            border: 2px solid #4CAF50;
-            border-radius: 8px;
-        }
-        
         .status {
             background: #333;
             padding: 10px;
@@ -67,7 +62,7 @@
         }
         
         .button {
-            background: #4CAF50;
+            background: #9B59B6;
             color: white;
             border: none;
             padding: 10px 20px;
@@ -78,7 +73,7 @@
         }
         
         .button:hover {
-            background: #45a049;
+            background: #8E44AD;
         }
         
         .button:disabled {
@@ -91,92 +86,95 @@
             margin: 20px 0;
         }
         
-        .tutorial-info {
+        .portal-info {
             background: #2a2a2a;
             padding: 15px;
             border-radius: 8px;
             margin: 10px 0;
+            border-left: 4px solid #9B59B6;
         }
         
-        .food-list {
+        .portal-features {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 10px;
             margin: 10px 0;
         }
         
-        .food-item {
+        .feature-item {
             background: #333;
             padding: 10px;
             border-radius: 5px;
-            border-left: 4px solid;
+            text-align: center;
         }
         
-        .food-item.green { border-left-color: #4CAF50; }
-        .food-item.yellow { border-left-color: #FFD700; }
-        .food-item.orange { border-left-color: #FF8800; }
-        .food-item.red { border-left-color: #FF0000; }
-        .food-item.pink { border-left-color: #FF88FF; }
-        .food-item.purple { border-left-color: #9B59B6; }
+        .score-info {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #4CAF50;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🐍 Snake Game - Food Tutorial Test</h1>
+        <h1>🌀 Snake Game - Portal Tutorial Test</h1>
         
         <div class="test-info">
             <h3>测试目标</h3>
-            <p>验证食物教程功能：每种食物第一次被吃时应该显示教程，之后不再重复显示。教程状态会保存在localStorage中。显示教程时游戏会自动暂停。</p>
+            <p>验证传送门教程功能：第一次触碰传送门时应该显示教程，之后不再重复显示。传送门在分数达到10分后才会出现。</p>
+        </div>
+        
+        <div class="portal-info">
+            <h3>传送门特性</h3>
+            <div class="portal-features">
+                <div class="feature-item">
+                    <strong>🌀 外观</strong><br>
+                    紫色旋转圆圈
+                </div>
+                <div class="feature-item">
+                    <strong>⏰ 出现条件</strong><br>
+                    分数 ≥ 10分
+                </div>
+                <div class="feature-item">
+                    <strong>🔄 生成间隔</strong><br>
+                    每5秒生成一对
+                </div>
+                <div class="feature-item">
+                    <strong>⏳ 冷却时间</strong><br>
+                    传送后临时禁用
+                </div>
+            </div>
+        </div>
+        
+        <div class="score-info">
+            <h3>快速达到传送门条件</h3>
+            <p>传送门需要分数达到10分才会出现。建议：</p>
+            <ul>
+                <li>吃绿色食物：+10分</li>
+                <li>吃橙色食物：+15分</li>
+                <li>吃黄色食物：+50分</li>
+            </ul>
         </div>
         
         <div class="test-steps">
             <h3>测试步骤</h3>
             <ol>
-                <li>开始游戏，吃绿色食物（应该显示教程，游戏暂停）</li>
+                <li>开始游戏，快速吃食物达到10分</li>
+                <li>等待传送门出现（紫色旋转圆圈）</li>
+                <li>控制蛇触碰传送门（应该显示教程，游戏暂停）</li>
                 <li>点击"Continue"按钮继续游戏</li>
-                <li>继续游戏，吃其他颜色的食物（每种第一次都会显示教程并暂停游戏）</li>
-                <li>等待传送门出现（分数达到10分后），触碰传送门（应该显示传送门教程）</li>
-                <li>重新开始游戏，吃相同的食物或触碰传送门（不应该再显示教程）</li>
+                <li>重新开始游戏，再次触碰传送门（不应该再显示教程）</li>
                 <li>点击"重置教程"按钮，然后重新开始游戏（应该再次显示教程）</li>
-                <li>检查localStorage中的教程状态</li>
             </ol>
-        </div>
-        
-        <div class="tutorial-info">
-            <h3>食物类型</h3>
-            <div class="food-list">
-                <div class="food-item green">
-                    <strong>🍎 绿色食物</strong><br>
-                    普通食物：+1段，+10分
-                </div>
-                <div class="food-item yellow">
-                    <strong>⭐ 黄色食物</strong><br>
-                    成长加速：+5段，+50分
-                </div>
-                <div class="food-item orange">
-                    <strong>⚡ 橙色食物</strong><br>
-                    速度提升：+1段，+15分，+20%速度
-                </div>
-                <div class="food-item red">
-                    <strong>⚠️ 红色食物</strong><br>
-                    缩小食物：-1段，-10分
-                </div>
-                <div class="food-item pink">
-                    <strong>🐌 粉色食物</strong><br>
-                    减速食物：+1段，+5分，-30%速度
-                </div>
-                <div class="food-item purple">
-                    <strong>🌀 传送门</strong><br>
-                    瞬间传送，临时冷却
-                </div>
-            </div>
         </div>
         
         <div class="controls">
             <button class="button" onclick="startNewGame()">开始新游戏</button>
             <button class="button" onclick="resetTutorials()">重置教程</button>
             <button class="button" onclick="showTutorialStatus()">显示教程状态</button>
-            <button class="button" onclick="showLocalStorage()">显示localStorage</button>
+            <button class="button" onclick="showGameInfo()">显示游戏信息</button>
         </div>
         
         <div class="game-container">
@@ -235,10 +233,17 @@
                 if (savedState) {
                     const shownTutorials = JSON.parse(savedState);
                     status += `已显示的教程: ${shownTutorials.join(', ')}<br>`;
-                    status += `显示数量: ${shownTutorials.length}/6`;
+                    status += `显示数量: ${shownTutorials.length}/6<br>`;
+                    
+                    if (shownTutorials.includes('portal')) {
+                        status += '<span style="color: #9B59B6;">✓ 传送门教程已显示</span>';
+                    } else {
+                        status += '<span style="color: #FF6B6B;">✗ 传送门教程未显示</span>';
+                    }
                 } else {
                     status += '没有保存的教程状态<br>';
-                    status += '显示数量: 0/6';
+                    status += '显示数量: 0/6<br>';
+                    status += '<span style="color: #FF6B6B;">✗ 传送门教程未显示</span>';
                 }
                 
                 document.getElementById('status').innerHTML = status;
@@ -247,23 +252,19 @@
             }
         };
         
-        window.showLocalStorage = function() {
-            try {
-                const allKeys = Object.keys(localStorage);
-                let status = '<strong>localStorage 内容:</strong><br>';
-                
-                allKeys.forEach(key => {
-                    const value = localStorage.getItem(key);
-                    status += `${key}: ${value}<br>`;
-                });
-                
-                if (allKeys.length === 0) {
-                    status += 'localStorage 为空';
-                }
-                
-                document.getElementById('status').innerHTML = status;
-            } catch (error) {
-                document.getElementById('status').innerHTML = '状态: 获取localStorage失败: ' + error.message;
+        window.showGameInfo = function() {
+            const gameState = window.gameState;
+            if (gameState) {
+                const status = document.getElementById('status');
+                status.innerHTML = `
+                    <strong>游戏信息:</strong><br>
+                    当前分数: ${gameState.score}<br>
+                    最高分: ${gameState.highScore}<br>
+                    传送门出现条件: ${gameState.score >= 10 ? '✓ 已满足' : '✗ 未满足 (需要10分)'}<br>
+                    游戏状态: ${gameState.isGameOver ? '游戏结束' : gameState.isPaused ? '暂停' : '进行中'}
+                `;
+            } else {
+                document.getElementById('status').innerHTML = '状态: 游戏状态未初始化';
             }
         };
         
@@ -272,7 +273,7 @@
             // 监听场景准备就绪
             document.addEventListener('current-scene-ready', function(event) {
                 window.currentScene = event.detail;
-                document.getElementById('status').innerHTML = '状态: 游戏场景已准备就绪，开始吃食物测试教程功能';
+                document.getElementById('status').innerHTML = '状态: 游戏场景已准备就绪，开始吃食物达到10分以触发传送门';
             });
             
             // 监听游戏结束
@@ -281,7 +282,7 @@
                 document.getElementById('status').innerHTML = `
                     <strong>游戏结束!</strong><br>
                     最终分数: ${score}<br>
-                    现在可以重新开始游戏测试教程功能
+                    现在可以重新开始游戏测试传送门教程功能
                 `;
             });
         });

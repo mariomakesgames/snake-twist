@@ -179,6 +179,12 @@ export class Snake {
             if (teleportPos) {
                 console.log('Portal teleportation!', teleportPos);
                 
+                // Show portal tutorial if not shown before
+                const foodTutorialManager = (this.scene as any).foodTutorialManager;
+                if (foodTutorialManager) {
+                    foodTutorialManager.showTutorial('portal');
+                }
+                
                 // Teleport head to new position immediately
                 this.head.x = teleportPos.x;
                 this.head.y = teleportPos.y;
