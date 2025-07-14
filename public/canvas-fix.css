@@ -1,11 +1,10 @@
-/* Canvas尺寸修复 */
+/* Canvas自适应尺寸 */
 #gameCanvas {
-    width: 600px !important;
-    height: 600px !important;
-    min-width: 600px !important;
-    min-height: 600px !important;
+    width: 100% !important;
     max-width: 600px !important;
-    max-height: 600px !important;
+    height: auto !important;
+    aspect-ratio: 1 !important;
+    min-height: 300px !important;
     border: 3px solid rgba(255, 255, 255, 0.3);
     border-radius: 10px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
@@ -18,34 +17,64 @@
 }
 
 #gameCanvas canvas {
-    width: 600px !important;
-    height: 600px !important;
-    min-width: 600px !important;
-    min-height: 600px !important;
-    max-width: 600px !important;
-    max-height: 600px !important;
+    width: 100% !important;
+    height: 100% !important;
     border-radius: 10px;
     display: block;
+    object-fit: contain;
 }
 
-/* 移动端响应式 */
-@media (max-width: 768px) {
+/* 平板设备 */
+@media (max-width: 1024px) and (min-width: 769px) {
     #gameCanvas {
-        width: 100% !important;
-        max-width: 600px !important;
-        height: auto !important;
-        min-height: 300px !important;
-        aspect-ratio: 1;
+        max-width: 500px !important;
         border-width: 2px;
         border-radius: 8px;
     }
     
     #gameCanvas canvas {
-        width: 100% !important;
-        height: auto !important;
-        min-height: 300px !important;
-        aspect-ratio: 1;
         border-radius: 8px;
+    }
+}
+
+/* 移动端响应式 */
+@media (max-width: 768px) {
+    #gameCanvas {
+        max-width: 100% !important;
+        min-height: 250px !important;
+        border-width: 2px;
+        border-radius: 8px;
+        margin: 0 10px;
+    }
+    
+    #gameCanvas canvas {
+        border-radius: 8px;
+    }
+}
+
+/* 小屏幕手机 */
+@media (max-width: 480px) {
+    #gameCanvas {
+        min-height: 200px !important;
+        border-width: 1px;
+        border-radius: 6px;
+        margin: 0 5px;
+    }
+    
+    #gameCanvas canvas {
+        border-radius: 6px;
+    }
+}
+
+/* 超小屏幕 */
+@media (max-width: 320px) {
+    #gameCanvas {
+        min-height: 180px !important;
+        border-radius: 4px;
+    }
+    
+    #gameCanvas canvas {
+        border-radius: 4px;
     }
 }
 
@@ -54,17 +83,24 @@
     box-sizing: border-box;
 }
 
-/* 确保游戏容器不会被压缩 */
+/* 确保游戏容器自适应 */
 .game-container {
-    min-width: 600px;
+    width: 100%;
     max-width: 800px;
     margin: 0 auto;
+    padding: 20px;
 }
 
 @media (max-width: 768px) {
     .game-container {
-        min-width: auto;
-        max-width: 100%;
-        margin: 10px;
+        padding: 15px;
+        margin: 0 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .game-container {
+        padding: 10px;
+        margin: 0 5px;
     }
 } 
