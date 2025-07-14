@@ -101,6 +101,7 @@ export class SnakeScene extends Phaser.Scene {
         if (gameState) {
             if (!gameState.isReviving) {
                 gameState.score = 0;
+                gameState.savedSnakeLength = undefined; // Clear saved length for new games
             }
             gameState.isPaused = false;
             gameState.isGameOver = false;
@@ -130,7 +131,7 @@ export class SnakeScene extends Phaser.Scene {
         graphics.stroke();
     }
 
-    private resetSnake(): void {
+    private resetSnake(keepLength: boolean = false): void {
         // Reset snake to center position
         const centerX = Math.floor(this.gameWidth / this.gridSize / 2) * this.gridSize + this.gridSize / 2;
         const centerY = Math.floor(this.gameHeight / this.gridSize / 2) * this.gridSize + this.gridSize / 2;
@@ -446,6 +447,12 @@ export class SnakeScene extends Phaser.Scene {
         if (!gameState.isGameOver) {
             gameState.isGameOver = true;
             
+            // Save snake length before destroying
+            if (this.snake) {
+                gameState.savedSnakeLength = this.snake.body.length;
+                console.log('Saved snake length:', gameState.savedSnakeLength);
+            }
+            
             // Stop portal manager
             this.portalManager.stop();
             
@@ -674,6 +681,19 @@ export class SnakeScene extends Phaser.Scene {
         // Reset snake position and state but keep score
         this.resetSnake();
         
+        // Restore snake length if saved
+        if (gameState.savedSnakeLength && gameState.savedSnakeLength > 3) {
+            const currentLength = this.snake.body.length;
+            const targetLength = gameState.savedSnakeLength;
+            
+            if (currentLength < targetLength) {
+                // Grow snake to saved length
+                const segmentsToAdd = targetLength - currentLength;
+                this.snake.grow(segmentsToAdd);
+                console.log(`Restored snake length from ${currentLength} to ${targetLength} (added ${segmentsToAdd} segments)`);
+            }
+        }
+        
         // Start the snake
         this.snake.start();
         
@@ -700,6 +720,7 @@ export class SnakeScene extends Phaser.Scene {
         
         console.log('Game revived, isMoving:', this.snake.isMoving);
         console.log('Current score:', gameState.score);
+        console.log('Snake length after revival:', this.snake.body.length);
     }
 
     private createRevivalCelebration(): void {
