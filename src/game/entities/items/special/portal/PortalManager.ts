@@ -5,9 +5,13 @@ export class PortalManager {
     private portals: Portal[] = [];
     private spawnTimer: Phaser.Time.TimerEvent | null = null;
     private minScore: number = 10;
-    private spawnInterval: number = 5000;
+    private spawnInterval: number = 15000; // 增加到15秒
+    private minPortalLifetime: number = 10000; // 最小存在时间10秒
+    private lastSpawnTime: number = 0;
     private isTeleporting: boolean = false;
     private teleportationStartTime: number = 0;
+    private consecutiveTeleports: number = 0; // 连续传送次数
+    private maxConsecutiveTeleports: number = 3; // 最大连续传送次数
 
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
@@ -43,6 +47,27 @@ export class PortalManager {
             return;
         }
 
+        // 检查现有portal的最小存在时间
+        const currentTime = this.scene.time.now;
+        if (this.portals.length > 0 && (currentTime - this.lastSpawnTime) < this.minPortalLifetime) {
+            console.log('Portal spawning skipped - minimum lifetime not reached');
+            return;
+        }
+
+        // 如果连续传送次数过多，延长生成间隔
+        if (this.consecutiveTeleports >= this.maxConsecutiveTeleports) {
+            console.log('Portal spawning delayed due to excessive teleportation');
+            this.consecutiveTeleports = 0;
+            return;
+        }
+
+        // 基于游戏进度动态调整生成概率
+        const dynamicSpawnChance = this.calculateDynamicSpawnChance();
+        if (Math.random() > dynamicSpawnChance) {
+            console.log(`Portal spawning skipped - dynamic chance: ${dynamicSpawnChance.toFixed(2)}`);
+            return;
+        }
+
         // Clear existing portals (but not during tutorial)
         if (!foodTutorialManager || !foodTutorialManager.isTutorialActive()) {
             this.clearPortals();
@@ -62,6 +87,48 @@ export class PortalManager {
 
         // Add to portals array
         this.portals.push(portal1, portal2);
+        
+        // 记录生成时间
+        this.lastSpawnTime = currentTime;
+        
+        console.log('New portals spawned at:', portal1Pos, portal2Pos);
+    }
+
+    private calculateDynamicSpawnChance(): number {
+        const gameState = (window as any).gameState;
+        const score = gameState.score;
+        const snake = (this.scene as any).snake;
+        const snakeLength = snake ? snake.body.length : 1;
+        
+        // 基础生成概率
+        let baseChance = 0.7; // 70%基础概率
+        
+        // 根据分数调整：分数越高，生成概率越低
+        if (score > 50) {
+            baseChance *= 0.8;
+        }
+        if (score > 100) {
+            baseChance *= 0.7;
+        }
+        if (score > 200) {
+            baseChance *= 0.6;
+        }
+        
+        // 根据蛇的长度调整：蛇越长，生成概率越低
+        if (snakeLength > 20) {
+            baseChance *= 0.8;
+        }
+        if (snakeLength > 40) {
+            baseChance *= 0.7;
+        }
+        
+        // 根据连续传送次数调整
+        if (this.consecutiveTeleports > 0) {
+            baseChance *= (1 - this.consecutiveTeleports * 0.2);
+        }
+        
+        // 确保概率在合理范围内
+        return Math.max(0.1, Math.min(0.9, baseChance));
     }
 
     private getRandomPosition(): { x: number; y: number } {
@@ -138,6 +205,7 @@ export class PortalManager {
     private startTeleportation(portal1: Portal, portal2: Portal): void {
         this.isTeleporting = true;
         this.teleportationStartTime = this.scene.time.now;
+        this.consecutiveTeleports++; // 增加连续传送计数
         
         // Deactivate both portals during teleportation
         portal1.deactivate();
@@ -172,6 +240,7 @@ export class PortalManager {
         this.portals = [];
         this.isTeleporting = false;
         this.teleportationStartTime = 0;
+        // 不清除连续传送计数，让它在下次生成时自然重置
     }
 
     public getPortals(): Portal[] {
@@ -195,6 +264,14 @@ export class PortalManager {
         }
     }
 
+    public setMinPortalLifetime(lifetime: number): void {
+        this.minPortalLifetime = lifetime;
+    }
+
+    public setMaxConsecutiveTeleports(max: number): void {
+        this.maxConsecutiveTeleports = max;
+    }
+
     public isCurrentlyTeleporting(): boolean {
         return this.isTeleporting;
     }
@@ -208,5 +285,13 @@ export class PortalManager {
         const totalDuration = Math.max(1500, snakeLength * 150);
         
         return Math.min(1, elapsed / totalDuration);
+    }
+
+    public getConsecutiveTeleports(): number {
+        return this.consecutiveTeleports;
+    }
+
+    public resetConsecutiveTeleports(): void {
+        this.consecutiveTeleports = 0;
     }
 } 
