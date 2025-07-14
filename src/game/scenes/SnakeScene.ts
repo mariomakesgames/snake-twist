@@ -579,13 +579,13 @@ export class SnakeScene extends Phaser.Scene {
     }
 
     private createMobileControls(): void {
-        // Create swipe instruction text for both mobile and desktop
+        // Create unified instruction text
         const instructionText = this.add.text(
             this.gameWidth / 2,
             this.gameHeight + 20,
-            this.isMobileDevice() ? 'Swipe to control the snake' : 'Click and drag to control the snake',
+            'Use arrow keys, mouse drag, or swipe to control',
             {
-                fontSize: '16px',
+                fontSize: '14px',
                 color: '#ffffff',
                 fontFamily: 'Arial',
                 backgroundColor: '#333333',
