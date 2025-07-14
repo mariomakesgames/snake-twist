@@ -88,16 +88,24 @@ export class SnakeScene extends Phaser.Scene {
         // Create mobile controls if on mobile device
         this.createMobileControls();
         
-        // Auto start the game
-        this.autoStartGame();
+        // Check if this is a revival
+        const gameState = (window as any).gameState;
+        if (gameState && gameState.isReviving) {
+            this.reviveGame();
+        } else {
+            // Auto start the game for new games
+            this.autoStartGame();
+        }
         
         // Initialize game state
-        const gameState = (window as any).gameState;
         if (gameState) {
-            gameState.score = 0;
+            if (!gameState.isReviving) {
+                gameState.score = 0;
+            }
             gameState.isPaused = false;
             gameState.isGameOver = false;
             gameState.isTeleporting = false;
+            gameState.isReviving = false; // Reset revival flag
             (window as any).updateUI();
         }
         
@@ -658,4 +666,108 @@ export class SnakeScene extends Phaser.Scene {
         leftArrow?: Phaser.GameObjects.Graphics;
         rightArrow?: Phaser.GameObjects.Graphics;
     };
+
+    private reviveGame(): void {
+        console.log('Reviving game...');
+        const gameState = (window as any).gameState;
+        
+        // Reset snake position and state but keep score
+        this.resetSnake();
+        
+        // Start the snake
+        this.snake.start();
+        
+        // Start portal manager
+        this.portalManager.start();
+        
+        // Show pause button with animation
+        this.pauseButton.setVisible(true);
+        this.pauseButton.setAlpha(0);
+        this.pauseButton.setScale(0.8);
+        this.tweens.add({
+            targets: this.pauseButton,
+            alpha: 1,
+            scaleX: 1,
+            scaleY: 1,
+            duration: 300,
+            ease: 'Power2'
+        });
+        
+        this.isGameStarted = true;
+        
+        // Create revival celebration effect
+        this.createRevivalCelebration();
+        
+        console.log('Game revived, isMoving:', this.snake.isMoving);
+        console.log('Current score:', gameState.score);
+    }
+
+    private createRevivalCelebration(): void {
+        // Create revival particles around the snake head
+        for (let i = 0; i < 20; i++) {
+            const particle = this.add.circle(
+                this.snake.head.x + (Math.random() - 0.5) * 100,
+                this.snake.head.y + (Math.random() - 0.5) * 100,
+                3,
+                0x4CAF50
+            );
+            
+            this.tweens.add({
+                targets: particle,
+                x: particle.x + (Math.random() - 0.5) * 200,
+                y: particle.y + (Math.random() - 0.5) * 200,
+                alpha: 0,
+                scale: 0,
+                duration: 1000 + Math.random() * 500,
+                ease: 'Power2',
+                onComplete: () => {
+                    particle.destroy();
+                }
+            });
+        }
+        
+        // Add a revival flash effect
+        const flash = this.add.rectangle(
+            this.gameWidth / 2,
+            this.gameHeight / 2,
+            this.gameWidth,
+            this.gameHeight,
+            0x4CAF50,
+            0.3
+        );
+        
+        this.tweens.add({
+            targets: flash,
+            alpha: 0,
+            duration: 500,
+            ease: 'Power2',
+            onComplete: () => {
+                flash.destroy();
+            }
+        });
+        
+        // Add revival text
+        const revivalText = this.add.text(
+            this.gameWidth / 2,
+            this.gameHeight / 2 - 100,
+            'REVIVED!',
+            {
+                fontSize: '36px',
+                color: '#4CAF50',
+                fontFamily: 'Arial',
+                fontStyle: 'bold'
+            }
+        ).setOrigin(0.5);
+        
+        this.tweens.add({
+            targets: revivalText,
+            alpha: 0,
+            y: revivalText.y - 50,
+            duration: 2000,
+            ease: 'Power2',
+            onComplete: () => {
+                revivalText.destroy();
+            }
+        });
+    }
 } 
