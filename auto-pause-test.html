@@ -73,21 +73,20 @@
 
     <script>
         // 页面可见性变化监听测试
-        document.addEventListener('visibilitychange', () => {
+        const handleVisibilityChange = () => {
             console.log('页面可见性变化:', {
                 hidden: document.hidden,
                 visibilityState: document.visibilityState,
                 timestamp: new Date().toLocaleTimeString()
             });
-        });
+        };
 
-        // 页面焦点变化监听测试
-        window.addEventListener('blur', () => {
-            console.log('页面失去焦点:', new Date().toLocaleTimeString());
-        });
+        // 添加事件监听器
+        document.addEventListener('visibilitychange', handleVisibilityChange);
 
-        window.addEventListener('focus', () => {
-            console.log('页面获得焦点:', new Date().toLocaleTimeString());
+        // 页面卸载时清理监听器
+        window.addEventListener('beforeunload', () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
         });
 
         // 显示当前状态
@@ -102,7 +101,7 @@
         document.body.insertBefore(statusDiv, document.getElementById('game-container'));
 
         // 定期更新状态
-        setInterval(() => {
+        const statusInterval = setInterval(() => {
             statusDiv.innerHTML = `
                 <strong>当前状态：</strong><br>
                 页面可见: ${!document.hidden}<br>
@@ -111,6 +110,11 @@
                 时间: ${new Date().toLocaleTimeString()}
             `;
         }, 1000);
+
+        // 页面卸载时清理定时器
+        window.addEventListener('beforeunload', () => {
+            clearInterval(statusInterval);
+        });
     </script>
 
     <!-- 加载游戏 -->
