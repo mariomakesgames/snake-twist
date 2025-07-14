@@ -390,6 +390,10 @@ export class FoodTutorialManager {
         return this.tutorials.length;
     }
 
+    public isTutorialActive(): boolean {
+        return this.isShowingTutorial;
+    }
+
     public destroy(): void {
         this.hideTutorial();
     }

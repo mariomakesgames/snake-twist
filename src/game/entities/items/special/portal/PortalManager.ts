@@ -36,8 +36,17 @@ export class PortalManager {
             return;
         }
 
-        // Clear existing portals
-        this.clearPortals();
+        // Check if tutorial is being shown
+        const foodTutorialManager = (this.scene as any).foodTutorialManager;
+        if (foodTutorialManager && foodTutorialManager.isTutorialActive()) {
+            console.log('Portal spawning paused due to tutorial display');
+            return;
+        }
+
+        // Clear existing portals (but not during tutorial)
+        if (!foodTutorialManager || !foodTutorialManager.isTutorialActive()) {
+            this.clearPortals();
+        }
 
         // Get random positions for portals
         const portal1Pos = this.getRandomPosition();
