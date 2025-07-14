@@ -522,7 +522,7 @@ export class SnakeScene extends Phaser.Scene {
                 this.snake.head.x + (Math.random() - 0.5) * 100,
                 this.snake.head.y + (Math.random() - 0.5) * 100,
                 3,
-                0xFF6B6B
+                0x4CAF50
             );
             
             this.tweens.add({

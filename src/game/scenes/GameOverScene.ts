@@ -439,7 +439,7 @@ export class GameOverScene extends Phaser.Scene {
                 this.cameras.main.centerX + (Math.random() - 0.5) * 200,
                 this.cameras.main.centerY + (Math.random() - 0.5) * 200,
                 2,
-                0xFF6B6B
+                0x4CAF50
             );
             
             this.tweens.add({
