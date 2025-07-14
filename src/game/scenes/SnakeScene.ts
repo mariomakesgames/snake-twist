@@ -4,6 +4,7 @@ import { Food } from '../entities/food/Food';
 import { GrowthBoostFood } from '../entities/food/good/GrowthBoostFood';
 import { SpeedBoostFood } from '../entities/food/good/SpeedBoostFood';
 import { PortalManager } from '../entities/items/special/portal/PortalManager';
+import { ScoreIndicator } from '../entities/ScoreIndicator';
 import { Snake } from '../entities/Snake';
 import { EventBus } from '../EventBus';
 import { FoodTutorialManager } from '../tutorial/FoodTutorialManager';
@@ -27,6 +28,9 @@ export class SnakeScene extends Phaser.Scene {
     
     // Tutorial
     private foodTutorialManager!: FoodTutorialManager;
+    
+    // Score Indicator
+    private scoreIndicator!: ScoreIndicator;
 
     constructor() {
         super({ key: 'SnakeScene' });
@@ -75,6 +79,9 @@ export class SnakeScene extends Phaser.Scene {
         
         // Initialize tutorial manager
         this.foodTutorialManager = new FoodTutorialManager(this);
+        
+        // Initialize score indicator
+        this.scoreIndicator = new ScoreIndicator(this);
         
         // Setup collision detection
         this.physics.add.overlap(this.snake.head, this.food.sprite, this.eatFood, undefined, this);
@@ -402,12 +409,17 @@ export class SnakeScene extends Phaser.Scene {
         this.foodTutorialManager.showTutorial('regular-food');
         
         const gameState = (window as any).gameState;
-        gameState.score += 10;
+        const scoreGain = 10;
+        gameState.score += scoreGain;
         if (gameState.score > gameState.highScore) {
             gameState.highScore = gameState.score;
             localStorage.setItem('snakeHighScore', gameState.highScore.toString());
         }
         (window as any).updateUI();
+        
+        // Show score indicator
+        this.scoreIndicator.showScoreIndicator(this.snake.head.x, this.snake.head.y, scoreGain, '#00ff00');
+        this.scoreIndicator.showEffectIndicator(this.snake.head.x, this.snake.head.y + 30, '+1🟩', '#00ff00');
         
         // Increase speed every 50 points
         if (gameState.score % 50 === 0) {
@@ -426,12 +438,17 @@ export class SnakeScene extends Phaser.Scene {
         this.foodTutorialManager.showTutorial('growth-boost');
         
         const gameState = (window as any).gameState;
-        gameState.score += 50; // Higher score for growth boost food
+        const scoreGain = 50;
+        gameState.score += scoreGain; // Higher score for growth boost food
         if (gameState.score > gameState.highScore) {
             gameState.highScore = gameState.score;
             localStorage.setItem('snakeHighScore', gameState.highScore.toString());
         }
         (window as any).updateUI();
+        
+        // Show score indicator
+        this.scoreIndicator.showScoreIndicator(this.snake.head.x, this.snake.head.y, scoreGain, '#ffff00');
+        this.scoreIndicator.showEffectIndicator(this.snake.head.x, this.snake.head.y + 30, '+5🟩', '#ffff00');
         
         // Increase speed every 50 points
         if (gameState.score % 50 === 0) {
@@ -449,14 +466,11 @@ export class SnakeScene extends Phaser.Scene {
         // Show tutorial for shrink food if not shown before
         this.foodTutorialManager.showTutorial('shrink-food');
         
-        const gameState = (window as any).gameState;
-        gameState.score -= 10; // Lower score for shrink food
-        if (gameState.score < 0) gameState.score = 0; // Ensure score doesn't go below 0
-        if (gameState.score < gameState.highScore) {
-            gameState.highScore = gameState.score;
-            localStorage.setItem('snakeHighScore', gameState.highScore.toString());
-        }
+        // No score change for shrink food
         (window as any).updateUI();
+        
+        // Show effect indicator only
+        this.scoreIndicator.showEffectIndicator(this.snake.head.x, this.snake.head.y + 30, '-1🟩', '#ff0000');
     }
 
     private eatSpeedBoostFood(): void {
@@ -468,12 +482,18 @@ export class SnakeScene extends Phaser.Scene {
         this.foodTutorialManager.showTutorial('speed-boost');
         
         const gameState = (window as any).gameState;
-        gameState.score += 15; // Higher score for speed boost food
+        const scoreGain = 10; // Same as regular food since it only grows by 1
+        gameState.score += scoreGain;
         if (gameState.score > gameState.highScore) {
             gameState.highScore = gameState.score;
             localStorage.setItem('snakeHighScore', gameState.highScore.toString());
         }
         (window as any).updateUI();
+        
+        // Show score indicator
+        this.scoreIndicator.showScoreIndicator(this.snake.head.x, this.snake.head.y, scoreGain, '#ff8800');
+        this.scoreIndicator.showEffectIndicator(this.snake.head.x, this.snake.head.y + 30, '+1🟩', '#ff8800');
+        this.scoreIndicator.showEffectIndicator(this.snake.head.x, this.snake.head.y + 50, 'Speed Boost', '#ff8800');
         
         // Increase speed immediately
         this.gameSpeed = Math.max(30, this.gameSpeed - 20);
@@ -491,12 +511,18 @@ export class SnakeScene extends Phaser.Scene {
         this.foodTutorialManager.showTutorial('slow-food');
         
         const gameState = (window as any).gameState;
-        gameState.score += 5; // Lower score for slow food
+        const scoreGain = 10; // Same as regular food since it grows by 1
+        gameState.score += scoreGain;
         if (gameState.score > gameState.highScore) {
             gameState.highScore = gameState.score;
             localStorage.setItem('snakeHighScore', gameState.highScore.toString());
         }
         (window as any).updateUI();
+        
+        // Show score indicator
+        this.scoreIndicator.showScoreIndicator(this.snake.head.x, this.snake.head.y, scoreGain, '#ff69b4');
+        this.scoreIndicator.showEffectIndicator(this.snake.head.x, this.snake.head.y + 30, '+1🟩', '#ff69b4');
+        this.scoreIndicator.showEffectIndicator(this.snake.head.x, this.snake.head.y + 50, 'Speed Slow', '#ff69b4');
         
         // Decrease speed immediately
         this.gameSpeed = Math.min(300, this.gameSpeed + 30);
@@ -528,6 +554,11 @@ export class SnakeScene extends Phaser.Scene {
             // Clean up tutorial manager
             if (this.foodTutorialManager) {
                 this.foodTutorialManager.destroy();
+            }
+            
+            // Clean up score indicator
+            if (this.scoreIndicator) {
+                this.scoreIndicator.destroy();
             }
             
             // Create particle effect for game over
