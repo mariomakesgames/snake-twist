@@ -6,15 +6,17 @@ export class Food {
     constructor(scene: Phaser.Scene) {
         console.log('Creating food');
         this.scene = scene;
-        this.sprite = scene.add.rectangle(0, 0, scene.scale.width / 30 - 2, scene.scale.height / 30 - 2, 0x00ff00);
+        const gridSize = (scene as any).gridSize || 20; // 使用统一的网格大小
+        this.sprite = scene.add.rectangle(0, 0, gridSize - 2, gridSize - 2, 0x00ff00);
         this.scene.physics.add.existing(this.sprite);
         this.reposition();
         console.log('Food created at:', this.sprite.x, this.sprite.y);
     }
 
     public reposition(): void {
-        const gridWidth = Math.floor(this.scene.scale.width / (this.scene.scale.width / 30));
-        const gridHeight = Math.floor(this.scene.scale.height / (this.scene.scale.height / 30));
+        const gridSize = (this.scene as any).gridSize || 20; // 使用统一的网格大小
+        const gridWidth = Math.floor(this.scene.scale.width / gridSize);
+        const gridHeight = Math.floor(this.scene.scale.height / gridSize);
         
         let x: number, y: number;
         let attempts = 0;
@@ -22,8 +24,8 @@ export class Food {
         do {
             const gridX = Phaser.Math.Between(0, gridWidth - 1);
             const gridY = Phaser.Math.Between(0, gridHeight - 1);
-            x = gridX * (this.scene.scale.width / 30) + (this.scene.scale.width / 30) / 2;
-            y = gridY * (this.scene.scale.height / 30) + (this.scene.scale.height / 30) / 2;
+            x = gridX * gridSize + gridSize / 2;
+            y = gridY * gridSize + gridSize / 2;
             attempts++;
         } while (this.isOnSnake(x, y) && attempts < 100);
         

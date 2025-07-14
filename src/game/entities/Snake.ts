@@ -28,7 +28,8 @@ export class Snake {
         this.isMobile = this.detectMobileDevice();
         
         // Create snake head using graphics - align to grid
-        this.head = scene.add.rectangle(x, y, scene.scale.width / 30 - 2, scene.scale.height / 30 - 2, 0x00ff00);
+        const gridSize = (scene as any).gridSize || 20; // 使用统一的网格大小
+        this.head = scene.add.rectangle(x, y, gridSize - 2, gridSize - 2, 0x00ff00);
         scene.physics.add.existing(this.head);
         const headBody = this.head.body as any;
         headBody.setCollideWorldBounds(true);
@@ -38,9 +39,9 @@ export class Snake {
         
         // Create initial body segments - align to grid
         for (let i = 1; i < 3; i++) {
-            const segmentX = x - i * (scene.scale.width / 30);
+            const segmentX = x - i * gridSize;
             const segmentY = y;
-            const segment = scene.add.rectangle(segmentX, segmentY, scene.scale.width / 30 - 2, scene.scale.height / 30 - 2, 0x00cc00);
+            const segment = scene.add.rectangle(segmentX, segmentY, gridSize - 2, gridSize - 2, 0x00cc00);
             scene.physics.add.existing(segment);
             this.body.push(segment);
             console.log('Body segment', i, 'created at:', segment.x, segment.y);
@@ -162,14 +163,15 @@ export class Snake {
         }));
         
         // Calculate new head position
-        const newHeadX = this.head.x + this.direction.x * (this.scene.scale.width / 30);
-        const newHeadY = this.head.y + this.direction.y * (this.scene.scale.height / 30);
+        const gridSize = (this.scene as any).gridSize || 20; // 使用统一的网格大小
+        const newHeadX = this.head.x + this.direction.x * gridSize;
+        const newHeadY = this.head.y + this.direction.y * gridSize;
         
         console.log('Moving snake:', {
             currentPos: { x: this.head.x, y: this.head.y },
             direction: { x: this.direction.x, y: this.direction.y },
             newPos: { x: newHeadX, y: newHeadY },
-            gridSize: this.scene.scale.width / 30
+            gridSize: gridSize
         });
         
         // Check for portal teleportation
@@ -235,13 +237,14 @@ export class Snake {
     }
 
     public grow(segments: number = 1): void {
+        const gridSize = (this.scene as any).gridSize || 20; // 使用统一的网格大小
         for (let i = 0; i < segments; i++) {
             const lastSegment = this.body[this.body.length - 1];
             const newSegment = this.scene.add.rectangle(
                 lastSegment.x,
                 lastSegment.y,
-                this.scene.scale.width / 30 - 2,
-                this.scene.scale.height / 30 - 2,
+                gridSize - 2,
+                gridSize - 2,
                 0x00cc00
             );
             this.scene.physics.add.existing(newSegment);
