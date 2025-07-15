@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { IRefPhaserGame, PhaserGame } from './PhaserGame';
-import { GameInstructions } from './components/GameInstructions';
 import { EventBus } from './game/EventBus';
 
 function App()
@@ -83,9 +82,9 @@ function App()
                 </div>
             </div>
 
-            <PhaserGame ref={phaserRef} currentActiveScene={currentScene} />
-
-            <GameInstructions />
+            <div style={{ position: 'relative' }}>
+                <PhaserGame ref={phaserRef} currentActiveScene={currentScene} />
+            </div>
         </div>
     )
 }

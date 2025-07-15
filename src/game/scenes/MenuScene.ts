@@ -1,7 +1,7 @@
 import { EventBus } from '../EventBus';
 
 export class MenuScene extends Phaser.Scene {
-    private startButton!: Phaser.GameObjects.Rectangle;
+    private startButton!: Phaser.GameObjects.Container;
     private startButtonText!: Phaser.GameObjects.Text;
     private titleText!: Phaser.GameObjects.Text;
     private subtitleText!: Phaser.GameObjects.Text;
@@ -22,7 +22,7 @@ export class MenuScene extends Phaser.Scene {
         // Create title
         this.titleText = this.add.text(centerX, centerY - 150, '🐍 SNAKE GAME', {
             fontSize: '48px',
-            color: '#4CAF50',
+            color: '#2196F3',
             fontFamily: 'Arial',
             fontStyle: 'bold'
         }).setOrigin(0.5);
@@ -37,6 +37,23 @@ export class MenuScene extends Phaser.Scene {
         // Create start button
         this.createStartButton(centerX, centerY + 50);
 
+        // Add game instructions below the start button
+        const instructions = [
+            '🎮 Controls: Arrow keys, mouse drag, or swipe to control the snake',
+            '🍎 Goal: Eat food to grow and increase your score',
+            '⚠️ Avoid: Walls and your own body!',
+            '💡 Desktop: Use arrow keys or click & drag',
+            '💡 Mobile: Swipe in any direction to move'
+        ];
+        const instructionsText = this.add.text(centerX, centerY + 120, instructions.join('\n'), {
+            fontSize: '18px',
+            color: '#e3f2fd',
+            fontFamily: 'Arial, sans-serif',
+            align: 'center',
+            wordWrap: { width: 420, useAdvancedWrap: true },
+            padding: { top: 10, bottom: 10 }
+        }).setOrigin(0.5, 0);
+
         // Add entrance animations
         this.addEntranceAnimations();
 
@@ -47,50 +64,74 @@ export class MenuScene extends Phaser.Scene {
     private createStartButton(x: number, y: number): void {
         const buttonWidth = 250;
         const buttonHeight = 70;
+        const borderRadius = 35;
 
-        // Create button background - beautiful green style
-        const background = this.add.rectangle(x, y, buttonWidth, buttonHeight, 0x4CAF50);
-        background.setStrokeStyle(3, 0x2E7D32);
-        background.setActive(true).setVisible(true);
+        // Create button background with modern gradient
+        const background = this.add.graphics();
+        background.fillGradientStyle(0x2196F3, 0x1976D2, 0x1565C0, 0x0D47A1, 1);
+        background.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, borderRadius);
+        
+        // Add border with gradient
+        background.lineStyle(3, 0x42A5F5, 1);
+        background.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, borderRadius);
 
-        // Create button text
-        const text = this.add.text(x, y, 'START GAME', {
+        // Create button text with better styling
+        const text = this.add.text(0, 0, 'START GAME', {
             fontSize: '28px',
             color: '#FFFFFF',
-            fontFamily: 'Arial',
-            fontStyle: 'bold'
+            fontFamily: 'Arial, sans-serif',
+            fontStyle: 'bold',
+            stroke: '#0D47A1',
+            strokeThickness: 1
         }).setOrigin(0.5);
-        text.setActive(true).setVisible(true);
 
-        // Store references
-        this.startButton = background;
-        this.startButtonText = text;
+        // Create container with all elements
+        this.startButton = this.add.container(x, y, [background, text]);
+        this.startButton.setActive(true).setVisible(true);
 
-        // Make background interactive directly
-        background.setInteractive(new Phaser.Geom.Rectangle(0, 0, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
+        // Make the background interactive
+        background.setInteractive(new Phaser.Geom.Rectangle(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
 
-        // Add hover effects to background
+        // Add hover effects
         background.on('pointerover', () => {
-            background.setFillStyle(0x66BB6A);
-            background.setStrokeStyle(3, 0x4CAF50);
+            // Change gradient on hover
+            background.clear();
+            background.fillGradientStyle(0x42A5F5, 0x2196F3, 0x1976D2, 0x1565C0, 1);
+            background.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, borderRadius);
+            background.lineStyle(3, 0x64B5F6, 1);
+            background.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, borderRadius);
         });
 
         background.on('pointerout', () => {
-            background.setFillStyle(0x4CAF50);
-            background.setStrokeStyle(3, 0x2E7D32);
+            // Restore original gradient
+            background.clear();
+            background.fillGradientStyle(0x2196F3, 0x1976D2, 0x1565C0, 0x0D47A1, 1);
+            background.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, borderRadius);
+            background.lineStyle(3, 0x42A5F5, 1);
+            background.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, borderRadius);
         });
 
-        // Add click handler to background
+        // Add click effect
         background.on('pointerdown', () => {
+            // 移除缩放效果，只保留点击功能
+        });
+
+        // Add click handler
+        background.on('pointerup', () => {
             this.startGame();
         });
         
         // Also make text interactive
-        text.setInteractive(new Phaser.Geom.Rectangle(0, 0, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
+        text.setInteractive(new Phaser.Geom.Rectangle(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
         text.on('pointerdown', () => {
+            // 移除缩放效果，只保留点击功能
+        });
+        text.on('pointerup', () => {
             this.startGame();
         });
     }
+
+
 
     private addEntranceAnimations(): void {
         // Title animation
@@ -125,10 +166,7 @@ export class MenuScene extends Phaser.Scene {
     private startGame(): void {
         console.log('Starting game from menu...');
         
-        // Immediately hide button text
-        this.startButtonText.setVisible(false);
-        
-        // Add exit animation for other elements
+        // Add exit animation for all elements
         this.tweens.add({
             targets: [this.titleText, this.subtitleText, this.startButton],
             alpha: 0,
