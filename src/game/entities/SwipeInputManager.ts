@@ -5,8 +5,8 @@ export class SwipeInputManager {
     private startY: number = 0;
     private startTime: number = 0;
     private isTracking: boolean = false;
-    private minSwipeDistance: number = 30; // 最小滑动距离
-    private maxSwipeTime: number = 500; // 最大滑动时间（毫秒）
+    private minSwipeDistance: number = 30; // Minimum swipe distance
+    private maxSwipeTime: number = 500; // Maximum swipe time (milliseconds)
     private isMobile: boolean;
 
     constructor(scene: Phaser.Scene, snake: any) {
@@ -29,50 +29,50 @@ export class SwipeInputManager {
             this.setupMouseInput();
         }
         
-        // 保留键盘输入作为备用
+        // Keep keyboard input as backup
         this.setupKeyboardInput();
     }
 
     private setupTouchInput(): void {
-        // 触摸开始
+        // Touch start
         this.scene.input.on('pointerdown', (pointer: any) => {
             if (pointer.isTouch) {
                 this.startSwipe(pointer.x, pointer.y);
             }
         });
 
-        // 触摸结束
+        // Touch end
         this.scene.input.on('pointerup', (pointer: any) => {
             if (pointer.isTouch) {
                 this.endSwipe(pointer.x, pointer.y);
             }
         });
 
-        // 触摸移动（可选，用于实时反馈）
+        // Touch move (optional, for real-time feedback)
         this.scene.input.on('pointermove', (pointer: any) => {
             if (pointer.isTouch && this.isTracking) {
-                // 可以在这里添加视觉反馈
+                // Can add visual feedback here
                 this.updateSwipeFeedback(pointer.x, pointer.y);
             }
         });
     }
 
     private setupMouseInput(): void {
-        // 鼠标按下
+        // Mouse down
         this.scene.input.on('pointerdown', (pointer: any) => {
             if (!pointer.isTouch) {
                 this.startSwipe(pointer.x, pointer.y);
             }
         });
 
-        // 鼠标释放
+        // Mouse release
         this.scene.input.on('pointerup', (pointer: any) => {
             if (!pointer.isTouch) {
                 this.endSwipe(pointer.x, pointer.y);
             }
         });
 
-        // 鼠标移动（用于实时反馈）
+        // Mouse move (for real-time feedback)
         this.scene.input.on('pointermove', (pointer: any) => {
             if (!pointer.isTouch && this.isTracking) {
                 this.updateSwipeFeedback(pointer.x, pointer.y);
@@ -118,7 +118,7 @@ export class SwipeInputManager {
         this.startTime = Date.now();
         this.isTracking = true;
         
-        // 添加视觉反馈
+        // Add visual feedback
         this.createSwipeIndicator(x, y);
     }
 
@@ -133,7 +133,7 @@ export class SwipeInputManager {
         this.isTracking = false;
         this.removeSwipeIndicator();
 
-        // 检查是否满足滑动条件
+        // Check if swipe conditions are met
         if (distance >= this.minSwipeDistance && deltaTime <= this.maxSwipeTime) {
             this.processSwipe(deltaX, deltaY, distance);
         }
@@ -142,32 +142,32 @@ export class SwipeInputManager {
     private processSwipe(deltaX: number, deltaY: number, distance: number): void {
         if (!this.snake.isMoving) return;
 
-        // 确定主要滑动方向
+        // Determine primary swipe direction
         const absX = Math.abs(deltaX);
         const absY = Math.abs(deltaY);
         
-        // 需要更明显的方向差异来避免对角线滑动
-        const directionThreshold = 0.3; // 30% 的方向差异阈值
+        // Need more obvious direction difference to avoid diagonal swipes
+        const directionThreshold = 0.3; // 30% direction difference threshold
         
         if (absX > absY && absX / distance > directionThreshold) {
-            // 水平滑动
+            // Horizontal swipe
             if (deltaX > 0 && this.snake.direction.x === 0) {
-                // 向右滑动
+                // Swipe right
                 this.snake.nextDirection.set(1, 0);
                 this.createSwipeEffect('right');
             } else if (deltaX < 0 && this.snake.direction.x === 0) {
-                // 向左滑动
+                // Swipe left
                 this.snake.nextDirection.set(-1, 0);
                 this.createSwipeEffect('left');
             }
         } else if (absY > absX && absY / distance > directionThreshold) {
-            // 垂直滑动
+            // Vertical swipe
             if (deltaY > 0 && this.snake.direction.y === 0) {
-                // 向下滑动
+                // Swipe down
                 this.snake.nextDirection.set(0, 1);
                 this.createSwipeEffect('down');
             } else if (deltaY < 0 && this.snake.direction.y === 0) {
-                // 向上滑动
+                // Swipe up
                 this.snake.nextDirection.set(0, -1);
                 this.createSwipeEffect('up');
             }
@@ -175,7 +175,7 @@ export class SwipeInputManager {
     }
 
     private updateSwipeFeedback(x: number, y: number): void {
-        // 更新滑动指示器的位置
+        // Update swipe indicator position
         if (this.swipeIndicator) {
             this.swipeIndicator.setPosition(x, y);
         }
@@ -198,7 +198,7 @@ export class SwipeInputManager {
     }
 
     private createSwipeEffect(direction: string): void {
-        // 创建滑动成功的视觉反馈
+        // Create visual feedback for successful swipe
         const colors = {
             up: 0x4CAF50,
             down: 0x4CAF50,
@@ -209,7 +209,7 @@ export class SwipeInputManager {
         const effect = this.scene.add.graphics();
         effect.lineStyle(4, colors[direction as keyof typeof colors], 0.9);
         
-        // 根据方向绘制箭头
+        // Draw arrow based on direction
         const centerX = this.scene.cameras.main.centerX;
         const centerY = this.scene.cameras.main.centerY;
         
@@ -251,7 +251,7 @@ export class SwipeInputManager {
         effect.strokePath();
         effect.setDepth(1000);
 
-        // 淡出动画
+        // Fade out animation
         this.scene.tweens.add({
             targets: effect,
             alpha: 0,
@@ -265,7 +265,7 @@ export class SwipeInputManager {
 
     public destroy(): void {
         this.removeSwipeIndicator();
-        // 清理事件监听器
+        // Clean up event listeners
         this.scene.input.off('pointerdown');
         this.scene.input.off('pointerup');
         this.scene.input.off('pointermove');

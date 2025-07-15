@@ -26,17 +26,17 @@ function App()
         };
     }, [highScore]);
 
-    // 监听页面可见性变化，实现自动暂停功能
+    // Listen for page visibility changes to implement auto-pause functionality
     useEffect(() => {
         let lastPauseTime = 0;
-        const PAUSE_COOLDOWN = 1000; // 1秒冷却时间，避免频繁触发
-        let isPausedByVisibility = false; // 标记是否由visibility事件暂停
-        let isProcessingVisibilityChange = false; // 防止重复处理
+        const PAUSE_COOLDOWN = 1000; // 1 second cooldown to avoid frequent triggers
+        let isPausedByVisibility = false; // Flag indicating if paused by visibility event
+        let isProcessingVisibilityChange = false; // Prevent duplicate processing
 
         const handleVisibilityChange = () => {
-            // 防止重复处理
+            // Prevent duplicate processing
             if (isProcessingVisibilityChange) {
-                console.log('正在处理visibility change，跳过重复调用');
+                console.log('Processing visibility change, skipping duplicate call');
                 return;
             }
 
@@ -49,7 +49,7 @@ function App()
             const snakeScene = currentScene as any;
 
             if (document.hidden) {
-                // 页面隐藏时自动暂停游戏
+                // Auto-pause game when page is hidden
                 const now = Date.now();
                 if (now - lastPauseTime > PAUSE_COOLDOWN && 
                     !gameState.isPaused && 
@@ -57,25 +57,25 @@ function App()
                     snakeScene.isGameActive()) {
                     
                     isProcessingVisibilityChange = true;
-                    console.log('页面隐藏，自动暂停游戏');
+                    console.log('Page hidden, auto-pausing game');
                     snakeScene.setPauseState(true);
                     lastPauseTime = now;
                     isPausedByVisibility = true;
                     
-                    // 延迟重置处理标志
+                    // Delay reset processing flag
                     setTimeout(() => {
                         isProcessingVisibilityChange = false;
                     }, 100);
                 }
             } else {
-                // 页面重新可见时，重置标记
+                // Reset flags when page becomes visible again
                 isPausedByVisibility = false;
                 isProcessingVisibilityChange = false;
             }
-            // 注意：页面重新可见时不自动恢复，需要用户手动点击恢复
+            // Note: Page doesn't auto-resume when visible again, user needs to manually click resume
         };
 
-        // 添加页面可见性变化监听
+        // Add page visibility change listener
         document.addEventListener('visibilitychange', handleVisibilityChange);
 
         return () => {

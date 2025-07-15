@@ -13,19 +13,19 @@ export class Portal {
         // Create portal graphics with improved design
         const portalGraphics = scene.add.graphics();
         
-        // 外圈光晕效果
+        // Outer ring glow effect
         portalGraphics.lineStyle(3, 0x4a90e2, 0.3);
         portalGraphics.strokeCircle(15, 15, 13);
         
-        // 主外圈
+        // Main outer ring
         portalGraphics.lineStyle(2, 0x4a90e2, 0.8);
         portalGraphics.strokeCircle(15, 15, 10);
         
-        // 内圈
+        // Inner ring
         portalGraphics.lineStyle(1, 0x4a90e2, 0.9);
         portalGraphics.strokeCircle(15, 15, 6);
         
-        // 中心点
+        // Center point
         portalGraphics.fillStyle(0x4a90e2, 0.7);
         portalGraphics.fillCircle(15, 15, 2);
         
@@ -36,7 +36,7 @@ export class Portal {
         this.sprite = scene.add.sprite(x, y, 'portal');
         this.sprite.setOrigin(0.5);
         
-        // 添加发光效果
+        // Add glow effect
         this.createGlowEffect();
         
         // Add rotation animation
@@ -49,7 +49,7 @@ export class Portal {
         this.glowEffect.strokeCircle(this.sprite.x, this.sprite.y, 16);
         this.glowEffect.setDepth(this.sprite.depth - 1);
         
-        // 发光动画
+        // Glow animation
         this.scene.tweens.add({
             targets: this.glowEffect,
             alpha: 0.3,
@@ -84,7 +84,7 @@ export class Portal {
         this.rotationTween = this.scene.tweens.add({
             targets: this.sprite,
             angle: 360,
-            duration: 500, // 快速旋转，0.5秒一圈
+            duration: 500, // Fast rotation, 0.5 seconds per revolution
             ease: 'Linear',
             loop: -1
         });
@@ -123,7 +123,7 @@ export class Portal {
 
     public activate(): void {
         this.isActive = true;
-        // 确保透明度为1，即使之前没有降低过
+        // Ensure alpha is 1, even if it wasn't reduced before
         this.sprite.setAlpha(1);
         if (this.glowEffect) {
             this.glowEffect.setAlpha(0.15);

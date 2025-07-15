@@ -1,4 +1,4 @@
-/* Canvas自适应尺寸 */
+/* Canvas adaptive size */
 #gameCanvas {
     width: 100% !important;
     max-width: 600px !important;
@@ -24,7 +24,7 @@
     object-fit: contain;
 }
 
-/* 平板设备 */
+/* Tablet devices */
 @media (max-width: 1024px) and (min-width: 769px) {
     #gameCanvas {
         max-width: 500px !important;
@@ -37,7 +37,7 @@
     }
 }
 
-/* 移动端响应式 */
+/* Mobile responsive */
 @media (max-width: 768px) {
     #gameCanvas {
         max-width: 100% !important;
@@ -52,7 +52,7 @@
     }
 }
 
-/* 小屏幕手机 */
+/* Small screen phones */
 @media (max-width: 480px) {
     #gameCanvas {
         min-height: 200px !important;
@@ -66,7 +66,7 @@
     }
 }
 
-/* 超小屏幕 */
+/* Extra small screens */
 @media (max-width: 320px) {
     #gameCanvas {
         min-height: 180px !important;
@@ -78,12 +78,12 @@
     }
 }
 
-/* 防止canvas被其他样式影响 */
+/* Prevent canvas from being affected by other styles */
 #gameCanvas * {
     box-sizing: border-box;
 }
 
-/* 确保游戏容器自适应 */
+/* Ensure game container is adaptive */
 .game-container {
     width: 100%;
     max-width: 800px;

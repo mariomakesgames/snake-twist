@@ -104,7 +104,7 @@ export class FoodTutorialManager {
         if (!tutorial || tutorial.shown) return;
 
         this.isShowingTutorial = true;
-        this.currentTutorialIndex = 0; // 设置为0表示单个教程弹窗
+        this.currentTutorialIndex = 0; // Set to 0 for single tutorial popup
         tutorial.shown = true;
         this.saveTutorialState(); // Save state when tutorial is shown
         
@@ -118,7 +118,7 @@ export class FoodTutorialManager {
             console.log('Game paused for tutorial');
         }
         
-        // 禁用移动输入管理器以避免干扰tutorial按钮点击
+        // Disable mobile input manager to avoid interference with tutorial button clicks
         this.disableMobileInput();
     }
 
@@ -129,13 +129,13 @@ export class FoodTutorialManager {
             console.log('Game resumed after tutorial');
         }
         
-        // 重新启用移动输入管理器
+        // Re-enable mobile input manager
         this.enableMobileInput();
     }
 
     private disableMobileInput(): void {
         try {
-            // 获取当前场景的snake实例并禁用其移动输入管理器
+            // Get the current scene's snake instance and disable its mobile input manager
             const gameState = (window as any).gameState;
             if (gameState && gameState.currentScene && gameState.currentScene.snake) {
                 const snake = gameState.currentScene.snake;
@@ -151,7 +151,7 @@ export class FoodTutorialManager {
 
     private enableMobileInput(): void {
         try {
-            // 重新启用移动输入管理器
+            // Re-enable mobile input manager
             const gameState = (window as any).gameState;
             if (gameState && gameState.currentScene && gameState.currentScene.snake) {
                 const snake = gameState.currentScene.snake;
@@ -319,13 +319,13 @@ export class FoodTutorialManager {
 
         // Make button interactive
         buttonBg.setInteractive();
-        buttonText.setInteractive(); // 添加文本交互性
+        buttonText.setInteractive(); // Add text interactivity
         
-        // 定义点击处理函数
+        // Define click handler function
         const handleButtonClick = () => {
             console.log('Tutorial button clicked, currentTutorialIndex:', this.currentTutorialIndex);
-            // 如果是单个教程弹窗（currentTutorialIndex为0），直接关闭
-            // 如果是批量教程弹窗（currentTutorialIndex > 0），显示下一个
+            // If it's a single tutorial popup (currentTutorialIndex is 0), close directly
+            // If it's a batch tutorial popup (currentTutorialIndex > 0), show the next one
             if (this.currentTutorialIndex === 0) {
                 console.log('Hiding tutorial (single tutorial)');
                 this.hideTutorial();
@@ -340,13 +340,13 @@ export class FoodTutorialManager {
             }
         };
 
-        // 按钮背景事件
+        // Button background events
         buttonBg.on('pointerup', () => {
             console.log('Tutorial button background clicked');
             handleButtonClick();
         });
 
-        // 按钮文本事件
+        // Button text events
         buttonText.on('pointerup', () => {
             console.log('Tutorial button text clicked');
             handleButtonClick();

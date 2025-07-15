@@ -1,8 +1,8 @@
-// Canvas尺寸修复脚本
+// Canvas size fix script
 (function() {
     'use strict';
     
-    // 等待DOM加载完成
+    // Wait for DOM to load
     function waitForCanvas() {
         const canvas = document.querySelector('#gameCanvas canvas');
         if (canvas) {
@@ -13,11 +13,11 @@
         }
     }
     
-    // 修复canvas尺寸
+    // Fix canvas size
     function fixCanvasSize(canvas) {
         console.log('Fixing canvas size...');
         
-        // 设置固定尺寸
+        // Set fixed size
         canvas.style.width = '600px';
         canvas.style.height = '800px';
         canvas.style.minWidth = '600px';
@@ -27,7 +27,7 @@
         canvas.style.display = 'block';
         canvas.style.margin = '0 auto';
         
-        // 设置容器尺寸
+        // Set container size
         const container = document.getElementById('gameCanvas');
         if (container) {
             container.style.width = '600px';
@@ -45,29 +45,29 @@
         console.log('Canvas size fixed');
     }
     
-    // 监听canvas变化
+    // Observe canvas changes
     function observeCanvasChanges() {
         const canvas = document.querySelector('#gameCanvas canvas');
         if (!canvas) return;
         
-        // 创建MutationObserver来监听DOM变化
+        // Create MutationObserver to watch DOM changes
         const observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
                 if (mutation.type === 'attributes' && 
                     (mutation.attributeName === 'style' || mutation.attributeName === 'width' || mutation.attributeName === 'height')) {
-                    // 延迟修复，确保Phaser的设置完成
+                    // Delay fix to ensure Phaser's settings are applied
                     setTimeout(() => fixCanvasSize(canvas), 50);
                 }
             });
         });
         
-        // 开始监听
+        // Start observing
         observer.observe(canvas, {
             attributes: true,
             attributeFilter: ['style', 'width', 'height']
         });
         
-        // 监听窗口大小变化
+        // Listen for window resize
         window.addEventListener('resize', function() {
             setTimeout(() => fixCanvasSize(canvas), 100);
         });
@@ -75,7 +75,7 @@
         console.log('Canvas observer started');
     }
     
-    // 移动端适配
+    // Mobile adaptation
     function handleMobileResize() {
         if (window.innerWidth <= 768) {
             const canvas = document.querySelector('#gameCanvas canvas');
@@ -85,7 +85,7 @@
                 const maxWidth = Math.min(600, window.innerWidth - 40);
                 const maxHeight = Math.min(800, window.innerHeight - 200);
                 const width = maxWidth;
-                const height = Math.min(maxHeight, width * 4/3); // 保持3:4比例
+                const height = Math.min(maxHeight, width * 4/3); // Maintain 3:4 aspect ratio
                 
                 canvas.style.width = width + 'px';
                 canvas.style.height = height + 'px';
@@ -104,7 +104,7 @@
         }
     }
     
-    // 初始化
+    // Initialization
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(waitForCanvas, 100);
@@ -115,7 +115,7 @@
         window.addEventListener('resize', handleMobileResize);
     }
     
-    // 定期检查canvas尺寸
+    // Periodically check canvas size
     setInterval(function() {
         const canvas = document.querySelector('#gameCanvas canvas');
         if (canvas) {

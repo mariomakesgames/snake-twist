@@ -1,143 +1,143 @@
-# 障碍物系统 (Obstacle System)
+# Obstacle System
 
-这个系统为贪吃蛇游戏添加了随机生成的障碍物，增加游戏的挑战性和趣味性。
+This system adds randomly generated obstacles to the snake game, increasing the challenge and fun.
 
-## 功能特性
+## Features
 
-- **单一大型障碍物**: 每局游戏只生成一个大的、粗的、从左上角开始的障碍物
-- **多种字母形状**: 支持L、T、S、Z、M等字母形状的大型障碍物
-- **左上角起始**: 所有障碍物都从左上角开始，延伸到地图边缘
-- **智能避让**: 障碍物不会生成在蛇的出生区域（中心4格半径）
-- **碰撞检测**: 蛇碰到障碍物会导致游戏结束
-- **食物避让**: 食物不会生成在障碍物上
-- **平衡设计**: 简单模式出现概率更高，确保游戏可玩性
+- **Single Large Obstacle**: Each game generates only one large, thick obstacle starting from the top-left corner.
+- **Multiple Letter-Shaped Patterns**: Supports large obstacles in L, T, S, Z, M, and other letter shapes.
+- **Top-Left Start**: All obstacles start from the top-left and extend to the map edge.
+- **Smart Avoidance**: Obstacles do not spawn in the snake's spawn area (center, 4-tile radius).
+- **Collision Detection**: The game ends if the snake hits an obstacle.
+- **Food Avoidance**: Food will not spawn on obstacles.
+- **Balanced Design**: Simple patterns (30% chance) for beginners, complex patterns for advanced players.
 
-## 障碍物类型
+## Obstacle Types
 
-### 1. 简单模式 (Simple Pattern) - 推荐模式
-- 生成1个超大型居中障碍物
-- 包含：8x8方块(64块)、10x6矩形(60块)、超大L型(20块)、超大T型(24块)、超大十字(25块)
-- 30%的出现概率，适合新手玩家
-- 提供适度的挑战性
+### 1. Simple Pattern (Recommended)
+- Generates one huge, centered obstacle.
+- Includes: 8x8 block (64 tiles), 10x6 rectangle (60 tiles), extra-large L (20 tiles), extra-large T (24 tiles), extra-large cross (25 tiles).
+- 30% chance to appear, suitable for new players.
+- Provides moderate challenge.
 
-### 2. L型障碍物 (L-Shape Pattern)
-- 生成1个大型L型障碍物，从左上角开始
-- 3格厚度，垂直部分延伸到地图底部，水平部分向右延伸
-- 从网格位置(3,2)开始，占据地图40%宽度
-- 10%的出现概率
+### 2. L-Shape Pattern
+- Generates one large L-shaped obstacle starting from the top-left.
+- 3 tiles thick, vertical part extends to the bottom, horizontal part extends right.
+- Starts at grid position (3,2), covers 40% of map width.
+- 10% chance to appear.
 
-### 3. T型障碍物 (T-Shape Pattern)
-- 生成1个大型T型障碍物，从左上角开始
-- 3格厚度，垂直部分延伸到地图底部，水平部分在中间向右延伸
-- 从网格位置(3,2)开始，占据地图40%宽度
-- 10%的出现概率
+### 3. T-Shape Pattern
+- Generates one large T-shaped obstacle starting from the top-left.
+- 3 tiles thick, vertical part extends to the bottom, horizontal part extends right from the middle.
+- Starts at grid position (3,2), covers 40% of map width.
+- 10% chance to appear.
 
-### 4. S型障碍物 (S-Shape Pattern)
-- 生成1个大型S型障碍物，从左上角开始
-- 3格厚度，形成S形状的曲线路径
-- 从网格位置(3,2)开始，占据地图40%宽度
-- 10%的出现概率
+### 4. S-Shape Pattern
+- Generates one large S-shaped obstacle starting from the top-left.
+- 3 tiles thick, forms a curved S path.
+- Starts at grid position (3,2), covers 40% of map width.
+- 10% chance to appear.
 
-### 5. Z型障碍物 (Z-Shape Pattern)
-- 生成1个大型Z型障碍物，从左上角开始
-- 3格厚度，形成Z形状的直线和斜线组合
-- 从网格位置(3,2)开始，占据地图40%宽度
-- 10%的出现概率
+### 5. Z-Shape Pattern
+- Generates one large Z-shaped obstacle starting from the top-left.
+- 3 tiles thick, forms a Z-shaped combination of straight and diagonal lines.
+- Starts at grid position (3,2), covers 40% of map width.
+- 10% chance to appear.
 
-### 6. M型障碍物 (M-Shape Pattern)
-- 生成1个大型M型障碍物，从左上角开始
-- 3格厚度，形成M形状的双垂直线和斜线连接
-- 从网格位置(3,2)开始，占据地图40%宽度
-- 10%的出现概率
+### 6. M-Shape Pattern
+- Generates one large M-shaped obstacle starting from the top-left.
+- 3 tiles thick, forms an M with double verticals and connecting diagonals.
+- Starts at grid position (3,2), covers 40% of map width.
+- 10% chance to appear.
 
-### 7. 迷宫型障碍物 (Maze Pattern)
-- 创建1个大型迷宫结构，居中放置
-- 走廊宽度为3格，墙壁厚度为2格
-- 20x25格的大型迷宫区域
-- 添加8个随机内部墙壁增加复杂性
-- 10%的出现概率
+### 7. Maze Pattern
+- Creates a large maze structure, centered.
+- Corridors are 3 tiles wide, walls are 2 tiles thick.
+- Large 20x25 grid maze area.
+- Adds 8 random internal walls for complexity.
+- 10% chance to appear.
 
-### 8. 随机超大形状障碍物 (Random Pattern)
-- 生成1个超大型随机形状，居中放置
-- 包含：10x10方块(100块)、12x8矩形(96块)、超大L型(40块)、超大T型(50块)、超大十字(41块)
-- 完全随机的形状组合
-- 适合中等难度游戏
-- 10%的出现概率
+### 8. Random Pattern
+- Generates one huge random-shaped obstacle, centered.
+- Includes: 10x10 block (100 tiles), 12x8 rectangle (96 tiles), extra-large L (40 tiles), extra-large T (50 tiles), extra-large cross (41 tiles).
+- Completely random shape combinations.
+- Suitable for intermediate difficulty.
+- 10% chance to appear.
 
-## 系统架构
+## System Structure
 
-### 核心类
+### Core Classes
 
-1. **Obstacle**: 单个障碍物块
-   - 位置、外观、物理属性
-   - 碰撞检测
+1. **Obstacle**: Single obstacle block
+   - Position, appearance, physics properties
+   - Collision detection
 
-2. **ObstaclePattern**: 障碍物模式基类
-   - 抽象类，定义障碍物生成接口
-   - 提供位置验证和网格转换功能
+2. **ObstaclePattern**: Base class for obstacle patterns
+   - Abstract class, defines obstacle generation interface
+   - Provides position validation and grid conversion functions
 
-3. **ObstacleManager**: 障碍物管理器
-   - 管理所有障碍物
-   - 加权随机选择模式并生成障碍物
-   - 处理碰撞检测
+3. **ObstacleManager**: Obstacle manager
+   - Manages all obstacles
+   - Weighted random selection of patterns and obstacle generation
+   - Handles collision detection
 
-### 模式实现
+### Pattern Implementations
 
-- `SimplePattern`: 简单型障碍物生成（推荐）
-- `LShapePattern`: L型障碍物生成
-- `TShapePattern`: T型障碍物生成
-- `SShapePattern`: S型障碍物生成
-- `ZShapePattern`: Z型障碍物生成
-- `MShapePattern`: M型障碍物生成
-- `MazePattern`: 迷宫型障碍物生成
-- `RandomPattern`: 随机型障碍物生成
+- `SimplePattern`: Simple obstacle generation (recommended)
+- `LShapePattern`: L-shape obstacle generation
+- `TShapePattern`: T-shape obstacle generation
+- `SShapePattern`: S-shape obstacle generation
+- `ZShapePattern`: Z-shape obstacle generation
+- `MShapePattern`: M-shape obstacle generation
+- `MazePattern`: Maze obstacle generation
+- `RandomPattern`: Random obstacle generation
 
-## 集成方式
+## Integration
 
-1. **场景集成**: 在SnakeScene中初始化ObstacleManager
-2. **游戏重启**: 每次重新开始游戏时重新生成障碍物
-3. **食物避让**: 修改Food类，确保食物不会生成在障碍物上
-4. **碰撞处理**: 蛇碰到障碍物触发游戏结束
+1. **Scene Integration**: Initialize ObstacleManager in SnakeScene
+2. **Game Restart**: Regenerate obstacles on each new game
+3. **Food Avoidance**: Modify Food class to ensure food does not spawn on obstacles
+4. **Collision Handling**: Trigger game over when snake hits an obstacle
 
-## 使用方法
+## Usage
 
 ```typescript
-// 在SnakeScene中初始化
+// Initialize in SnakeScene
 this.obstacleManager = new ObstacleManager(this);
 this.obstacleManager.generateObstacles();
 
-// 重新开始游戏时重新生成
+// Regenerate on new game
 this.obstacleManager.generateObstacles();
 ```
 
-## 配置选项
+## Configuration Options
 
-- **网格大小**: 20像素（与游戏网格一致）
-- **障碍物颜色**: 灰色 (#666666)
-- **生成区域**: 避开蛇的出生区域（中心4格半径）
-- **最大尝试次数**: 防止无限循环
-- **模式权重**: 简单模式30%，其他模式各10%
+- **Grid Size**: 20px (consistent with game grid)
+- **Obstacle Color**: Gray (#666666)
+- **Generation Area**: Avoids snake spawn area (center, 4-tile radius)
+- **Max Attempts**: Prevents infinite loops
+- **Pattern Weights**: Simple pattern 30%, others 10% each
 
-## 平衡性设计
+## Balance Design
 
-- **单一大型障碍物**: 每局游戏只有一个大型障碍物，避免过于复杂
-- **左上角起始**: 所有字母形状障碍物都从左上角开始，提供一致的体验
-- **简单模式优先**: 30%概率出现，确保新手友好
-- **保护区域**: 扩大蛇出生区域保护范围
-- **渐进难度**: 从简单到复杂的不同模式
+- **Single Large Obstacle**: Only one large obstacle per game to avoid excessive complexity
+- **Top-Left Start**: All letter-shaped obstacles start from the top-left for consistency
+- **Simple Pattern Priority**: 30% chance for simple pattern, beginner-friendly
+- **Protected Area**: Enlarged snake spawn protection area
+- **Progressive Difficulty**: Patterns range from simple to complex
 
-## 扩展性
+## Extensibility
 
-系统设计为可扩展的，可以轻松添加新的障碍物模式：
+The system is designed to be extensible, allowing easy addition of new obstacle patterns:
 
-1. 继承`ObstaclePattern`类
-2. 实现`generate()`和`getName()`方法
-3. 在`ObstacleManager`中注册新模式
-4. 调整权重分配
+1. Inherit from `ObstaclePattern` class
+2. Implement `generate()` and `getName()` methods
+3. Register new pattern in `ObstacleManager`
+4. Adjust weight distribution as needed
 
-## 性能考虑
+## Performance Considerations
 
-- 使用网格对齐减少计算复杂度
-- 限制最大尝试次数防止无限循环
-- 高效的碰撞检测使用Phaser物理引擎
-- 优化的模式选择算法 
+- Uses grid alignment to reduce computational complexity
+- Limits max attempts to prevent infinite loops
+- Efficient collision detection using Phaser physics engine
+- Optimized pattern selection algorithm 

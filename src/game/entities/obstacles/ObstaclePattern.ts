@@ -37,7 +37,7 @@ export abstract class ObstaclePattern {
         // Check if position conflicts with snake spawn area (center)
         const centerX = Math.floor(this.gameWidth / this.gridSize / 2) * this.gridSize + this.gridSize / 2;
         const centerY = Math.floor(this.gameHeight / this.gridSize / 2) * this.gridSize + this.gridSize / 2;
-        const spawnRadius = this.gridSize * 4; // 增加保护范围到4格半径
+        const spawnRadius = this.gridSize * 4; // Increase protection radius to 4 grid spaces
         
         const distanceToCenter = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
         if (distanceToCenter < spawnRadius) {

@@ -29,10 +29,10 @@ export class GameSettingsManager {
             console.warn('Failed to load game settings:', error);
         }
 
-        // 默认设置
+        // Default settings
         return {
             obstacleMode: false,
-            obstacleModeScoreMultiplier: 2.0 // 障碍物模式下得分2倍
+            obstacleModeScoreMultiplier: 2.0 // 2x score multiplier in obstacle mode
         };
     }
 

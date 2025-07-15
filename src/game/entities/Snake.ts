@@ -31,7 +31,7 @@ export class Snake {
         const validPosition = this.findValidSpawnPosition(x, y);
         
         // Create snake head using graphics - align to grid
-        const gridSize = (scene as any).gridSize || 20; // 使用统一的网格大小
+        const gridSize = (scene as any).gridSize || 20; // Use unified grid size
         this.head = scene.add.rectangle(validPosition.x, validPosition.y, gridSize - 2, gridSize - 2, 0x00ff00);
         scene.physics.add.existing(this.head);
         const headBody = this.head.body as any;
@@ -129,7 +129,7 @@ export class Snake {
             
             switch (key) {
                 case 'KeyW':
-                    if (this.direction.y === 0) { // 就排除了180度的turn的情况
+                    if (this.direction.y === 0) { // This excludes 180-degree turns
                         this.nextDirection.set(0, -1);
                     }
                     break;
@@ -208,7 +208,7 @@ export class Snake {
         return true;
     }
 
-    // 每帧执行 根据direction执行移动
+    // Execute movement based on direction each frame
     private move(): void {
         // Store old positions
         const oldPositions = this.body.map(segment => ({
@@ -217,7 +217,7 @@ export class Snake {
         }));
         
         // Calculate new head position
-        const gridSize = (this.scene as any).gridSize || 20; // 使用统一的网格大小
+        const gridSize = (this.scene as any).gridSize || 20; // Use unified grid size
         const newHeadX = this.head.x + this.direction.x * gridSize;
         const newHeadY = this.head.y + this.direction.y * gridSize;
         
@@ -293,7 +293,7 @@ export class Snake {
     }
 
     public grow(segments: number = 1): void {
-        const gridSize = (this.scene as any).gridSize || 20; // 使用统一的网格大小
+        const gridSize = (this.scene as any).gridSize || 20; // Use unified grid size
         for (let i = 0; i < segments; i++) {
             const lastSegment = this.body[this.body.length - 1];
             const newSegment = this.scene.add.rectangle(

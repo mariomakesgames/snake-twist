@@ -6,7 +6,7 @@ export class Food {
     constructor(scene: Phaser.Scene) {
         console.log('Creating food');
         this.scene = scene;
-        const gridSize = (scene as any).gridSize || 20; // 使用统一的网格大小
+        const gridSize = (scene as any).gridSize || 20; // Use unified grid size
         this.sprite = scene.add.rectangle(0, 0, gridSize - 2, gridSize - 2, 0x00ff00);
         this.scene.physics.add.existing(this.sprite);
         this.reposition();
@@ -14,7 +14,7 @@ export class Food {
     }
 
     public reposition(): void {
-        const gridSize = (this.scene as any).gridSize || 20; // 使用统一的网格大小
+        const gridSize = (this.scene as any).gridSize || 20; // Use unified grid size
         const gridWidth = Math.floor(this.scene.scale.width / gridSize);
         const gridHeight = Math.floor(this.scene.scale.height / gridSize);
         

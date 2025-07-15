@@ -15,24 +15,24 @@ export class ObstacleManager {
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
         this.patterns = [
-            new LShapePattern(scene),    // L型模式
-            new TShapePattern(scene),    // T型模式
-            new HShapePattern(scene),    // H型模式
-            new EShapePattern(scene)     // E型模式
+            new LShapePattern(scene),    // L-shape pattern
+            new TShapePattern(scene),    // T-shape pattern
+            new HShapePattern(scene),    // H-shape pattern
+            new EShapePattern(scene)     // E-shape pattern
         ];
         
-        // 检查是否有保存的模式信息（复活时）
+        // Check if there's saved pattern information (during revival)
         const gameState = (window as any).gameState;
         if (gameState && gameState.isReviving && gameState.savedObstaclePattern) {
-            // 使用保存的模式
+            // Use saved pattern
             const savedPatternName = gameState.savedObstaclePattern;
             this.selectedPattern = this.patterns.find(pattern => pattern.getName() === savedPatternName) || this.patterns[0];
             console.log(`🔄 Revival mode - using saved pattern: ${this.selectedPattern.getName()}`);
         } else {
-            // 随机选择一种形状，整个游戏过程都使用这种形状
+            // Randomly select one shape, use this shape throughout the entire game
             const randomIndex = Math.floor(Math.random() * this.patterns.length);
             this.selectedPattern = this.patterns[randomIndex];
-            console.log(`🎲 游戏开始！随机选择了: ${this.selectedPattern.getName()}`);
+            console.log(`🎲 Game started! Randomly selected: ${this.selectedPattern.getName()}`);
         }
     }
 
@@ -42,10 +42,10 @@ export class ObstacleManager {
         // Clear existing obstacles
         this.clearObstacles();
         
-        // 使用构造函数中确定的形状
+        // Use the shape determined in constructor
         console.log(`Using pattern: ${this.selectedPattern.getName()}`);
         
-        // 清除任何保存的障碍物数据，强制重新生成
+        // Clear any saved obstacle data, force regeneration
         this.savedObstaclePositions = [];
         const gameState = (window as any).gameState;
         if (gameState) {

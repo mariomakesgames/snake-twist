@@ -198,7 +198,7 @@ export class MenuScene extends Phaser.Scene {
 
         // Add click effect
         background.on('pointerdown', () => {
-            // 移除缩放效果，只保留点击功能
+            // Remove scale effect, keep only click functionality
         });
 
         // Add click handler
@@ -209,7 +209,7 @@ export class MenuScene extends Phaser.Scene {
         // Also make text interactive
         text.setInteractive(new Phaser.Geom.Rectangle(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
         text.on('pointerdown', () => {
-            // 移除缩放效果，只保留点击功能
+            // Remove scale effect, keep only click functionality
         });
         text.on('pointerup', () => {
             this.startGame();

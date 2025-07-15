@@ -7,14 +7,14 @@ export class ScoreIndicator {
     }
 
     /**
-     * 显示分数指示器
-     * @param x 显示位置的x坐标
-     * @param y 显示位置的y坐标
-     * @param score 分数变化值
-     * @param color 文字颜色
+     * Show score indicator
+     * @param x X coordinate of display position
+     * @param y Y coordinate of display position
+     * @param score Score change value
+     * @param color Text color
      */
     public showScoreIndicator(x: number, y: number, score: number, color: string = '#ffffff'): void {
-        // 创建分数文本
+        // Create score text
         const scoreText = this.scene.add.text(x, y, `${score > 0 ? '+' : ''}${score}`, {
             fontSize: '28px',
             fontFamily: 'Arial, sans-serif',
@@ -31,10 +31,10 @@ export class ScoreIndicator {
             }
         }).setOrigin(0.5);
 
-        // 添加到指示器列表
+        // Add to indicator list
         this.indicators.push(scoreText);
 
-        // 创建背景光晕效果
+        // Create background glow effect
         const glow = this.scene.add.circle(x, y, 30, 0xffffff, 0.3);
         this.scene.tweens.add({
             targets: glow,
@@ -47,19 +47,19 @@ export class ScoreIndicator {
             }
         });
 
-        // 创建动画效果：向上飘动并逐渐消失
+        // Create animation effect: float upward and fade out
         this.scene.tweens.add({
             targets: scoreText,
-            y: y - 80, // 向上移动80像素
-            alpha: 0,  // 逐渐透明
-            scaleX: 1.3, // 稍微放大
+            y: y - 80, // Move up 80 pixels
+            alpha: 0,  // Gradually transparent
+            scaleX: 1.3, // Slightly enlarge
             scaleY: 1.3,
-            duration: 1000, // 1秒动画
+            duration: 1000, // 1 second animation
             ease: 'Power2',
             onComplete: () => {
-                // 动画完成后销毁文本
+                // Destroy text after animation completes
                 scoreText.destroy();
-                // 从列表中移除
+                // Remove from list
                 const index = this.indicators.indexOf(scoreText);
                 if (index > -1) {
                     this.indicators.splice(index, 1);
@@ -67,7 +67,7 @@ export class ScoreIndicator {
             }
         });
 
-        // 添加弹跳和旋转效果
+        // Add bounce and rotation effects
         this.scene.tweens.add({
             targets: scoreText,
             scaleX: 1.5,
@@ -82,7 +82,7 @@ export class ScoreIndicator {
             }
         });
 
-        // 添加颜色变化效果
+        // Add color change effect
         this.scene.tweens.add({
             targets: scoreText,
             alpha: 0.8,
@@ -93,14 +93,14 @@ export class ScoreIndicator {
     }
 
     /**
-     * 显示食物效果指示器
-     * @param x 显示位置的x坐标
-     * @param y 显示位置的y坐标
-     * @param effect 效果文本
-     * @param color 文字颜色
+     * Show food effect indicator
+     * @param x X coordinate of display position
+     * @param y Y coordinate of display position
+     * @param effect Effect text
+     * @param color Text color
      */
     public showEffectIndicator(x: number, y: number, effect: string, color: string = '#ffffff'): void {
-        // 创建效果文本
+        // Create effect text
         const effectText = this.scene.add.text(x, y, effect, {
             fontSize: '22px',
             fontFamily: 'Arial, sans-serif',
@@ -117,10 +117,10 @@ export class ScoreIndicator {
             }
         }).setOrigin(0.5);
 
-        // 添加到指示器列表
+        // Add to indicator list
         this.indicators.push(effectText);
 
-        // 创建小光晕效果
+        // Create small glow effect
         const smallGlow = this.scene.add.circle(x, y, 20, 0xffffff, 0.2);
         this.scene.tweens.add({
             targets: smallGlow,
@@ -133,19 +133,19 @@ export class ScoreIndicator {
             }
         });
 
-        // 创建动画效果：向上飘动并逐渐消失
+        // Create animation effect: float upward and fade out
         this.scene.tweens.add({
             targets: effectText,
-            y: y - 50, // 向上移动50像素
-            alpha: 0,  // 逐渐透明
-            scaleX: 1.2, // 稍微放大
+            y: y - 50, // Move up 50 pixels
+            alpha: 0,  // Gradually transparent
+            scaleX: 1.2, // Slightly enlarge
             scaleY: 1.2,
-            duration: 1400, // 1.4秒动画
+            duration: 1400, // 1.4 second animation
             ease: 'Power2',
             onComplete: () => {
-                // 动画完成后销毁文本
+                // Destroy text after animation completes
                 effectText.destroy();
-                // 从列表中移除
+                // Remove from list
                 const index = this.indicators.indexOf(effectText);
                 if (index > -1) {
                     this.indicators.splice(index, 1);
@@ -153,7 +153,7 @@ export class ScoreIndicator {
             }
         });
 
-        // 添加轻微的弹跳效果
+        // Add slight bounce effect
         this.scene.tweens.add({
             targets: effectText,
             scaleX: 1.3,
@@ -168,7 +168,7 @@ export class ScoreIndicator {
     }
 
     /**
-     * 清理所有指示器
+     * Clean up all indicators
      */
     public destroy(): void {
         this.indicators.forEach(indicator => {

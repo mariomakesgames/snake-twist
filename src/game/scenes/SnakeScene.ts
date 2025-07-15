@@ -148,7 +148,7 @@ export class SnakeScene extends Phaser.Scene {
             gameState.isPaused = false;
             gameState.isGameOver = false;
             gameState.isTeleporting = false;
-            gameState.currentScene = this; // 设置当前场景引用
+            gameState.currentScene = this; // Set current scene reference
             (window as any).updateUI();
         }
         
@@ -374,12 +374,12 @@ export class SnakeScene extends Phaser.Scene {
         console.log('Snake direction:', this.snake.direction.x, this.snake.direction.y);
     }
 
-    // 添加公共方法来检查游戏状态
+    // Add public method to check game status
     public isGameActive(): boolean {
         return this.isGameStarted && !(window as any).gameState?.isGameOver;
     }
 
-    // 添加公共方法来强制设置暂停状态
+    // Add public method to force set pause state
     public setPauseState(paused: boolean): void {
         const gameState = (window as any).gameState;
         if (!gameState || gameState.isGameOver || !this.isGameStarted) return;
@@ -404,10 +404,10 @@ export class SnakeScene extends Phaser.Scene {
     private pauseSubtitle?: Phaser.GameObjects.Text;
 
     private createPauseOverlay(): void {
-        // 检查是否已经存在pause overlay，如果存在则先清理
+        // Check if pause overlay already exists, if so clean it up first
         if (this.pauseOverlay || this.pauseText || this.pauseIcon || this.pauseSubtitle) {
             this.removePauseOverlay();
-            // 等待一帧确保清理完成
+            // Wait one frame to ensure cleanup is complete
             this.time.delayedCall(16, () => {
                 this.createPauseOverlayInternal();
             });
@@ -548,7 +548,7 @@ export class SnakeScene extends Phaser.Scene {
 
     private removePauseOverlay(): void {
         if (this.pauseOverlay || this.pauseText || this.pauseIcon || this.pauseSubtitle) {
-            // 立即停止所有相关的tweens
+            // Immediately stop all related tweens
             if (this.pauseOverlay) {
                 this.tweens.killTweensOf(this.pauseOverlay);
             }
@@ -562,13 +562,13 @@ export class SnakeScene extends Phaser.Scene {
                 this.tweens.killTweensOf(this.pauseSubtitle);
             }
             
-            // 立即销毁所有元素
+            // Immediately destroy all elements
             this.pauseOverlay?.destroy();
             this.pauseText?.destroy();
             this.pauseIcon?.destroy();
             this.pauseSubtitle?.destroy();
             
-            // 重置引用
+            // Reset references
             this.pauseOverlay = undefined;
             this.pauseText = undefined;
             this.pauseIcon = undefined;
@@ -631,7 +631,7 @@ export class SnakeScene extends Phaser.Scene {
         this.food.reposition();
         
         const gameState = (window as any).gameState;
-        const baseScoreGain = 10; // 基础得分10分
+        const baseScoreGain = 10; // Base score gain of 10 points
         const scoreGain = Math.round(baseScoreGain * this.settingsManager.getScoreMultiplier());
         console.log(`Base score: ${baseScoreGain}, Multiplier: ${this.settingsManager.getScoreMultiplier()}, Final score: ${scoreGain}`);
         gameState.score += scoreGain;
