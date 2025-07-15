@@ -25,15 +25,6 @@ export class FoodTutorialManager {
     private initializeTutorials(): FoodTutorial[] {
         return [
             {
-                id: 'regular-food',
-                name: 'Regular Food',
-                description: 'Basic green food that makes your snake grow by 1 segment',
-                effect: '+1 segment, +10 points',
-                color: 0x00ff00,
-                icon: '🍎',
-                shown: false
-            },
-            {
                 id: 'growth-boost',
                 name: 'Growth Boost Food',
                 description: 'Yellow food that provides a massive growth boost',
@@ -113,6 +104,7 @@ export class FoodTutorialManager {
         if (!tutorial || tutorial.shown) return;
 
         this.isShowingTutorial = true;
+        this.currentTutorialIndex = 0; // 设置为0表示单个教程弹窗
         tutorial.shown = true;
         this.saveTutorialState(); // Save state when tutorial is shown
         
@@ -151,11 +143,13 @@ export class FoodTutorialManager {
         const tutorial = this.tutorials[this.currentTutorialIndex];
         // Don't pause again when showing next tutorial (game is already paused)
         this.createTutorialOverlay(tutorial, false);
-        this.currentTutorialIndex++;
         
         // Mark tutorial as shown
         tutorial.shown = true;
         this.saveTutorialState();
+        
+        // Increment index after showing tutorial
+        this.currentTutorialIndex++;
     }
 
     private createTutorialOverlay(tutorial: FoodTutorial, shouldPause: boolean = true): void {
@@ -295,10 +289,16 @@ export class FoodTutorialManager {
         });
 
         button.on('pointerup', () => {
-            if (this.currentTutorialIndex < this.tutorials.length) {
-                this.showNextTutorial();
-            } else {
+            // 如果是单个教程弹窗（currentTutorialIndex为0），直接关闭
+            // 如果是批量教程弹窗（currentTutorialIndex > 0），显示下一个
+            if (this.currentTutorialIndex === 0) {
                 this.hideTutorial();
+            } else {
+                if (this.currentTutorialIndex < this.tutorials.length) {
+                    this.showNextTutorial();
+                } else {
+                    this.hideTutorial();
+                }
             }
         });
 

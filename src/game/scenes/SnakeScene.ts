@@ -10,6 +10,10 @@ import { Snake } from '../entities/Snake';
 import { EventBus } from '../EventBus';
 import { FoodTutorialManager } from '../tutorial/FoodTutorialManager';
 
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    || ('ontouchstart' in window)
+    || (navigator.maxTouchPoints > 0);
+
 export class SnakeScene extends Phaser.Scene {
     public snake!: Snake;
     public food!: Food;
@@ -24,7 +28,6 @@ export class SnakeScene extends Phaser.Scene {
     private gameHeight: number;
     
     // UI Elements
-    private pauseButton!: Phaser.GameObjects.Container;
     private isGameStarted: boolean = false;
     
     // Tutorial
@@ -103,8 +106,7 @@ export class SnakeScene extends Phaser.Scene {
         headBody.setCollideWorldBounds(true);
         this.physics.world.on('worldbounds', this.gameOver, this);
         
-        // Setup pause button
-        this.createPauseButton();
+
         
         // Create mobile controls if on mobile device
         this.createMobileControls();
@@ -170,6 +172,8 @@ export class SnakeScene extends Phaser.Scene {
         // Reset direction
         this.snake.direction.set(1, 0);
         
+
+        
         // Reset snake state
         this.snake.isMoving = false;
         this.snake.setSpeed(this.gameSpeed);
@@ -207,52 +211,11 @@ export class SnakeScene extends Phaser.Scene {
         // Add celebration effect
         this.createStartCelebration();
         
-        // Show pause button with animation
-        this.pauseButton.setVisible(true);
-        this.pauseButton.setAlpha(0);
-        this.pauseButton.setScale(0.8);
-        this.tweens.add({
-            targets: this.pauseButton,
-            alpha: 1,
-            scaleX: 1,
-            scaleY: 1,
-            duration: 300,
-            ease: 'Power2'
-        });
-        
         this.isGameStarted = true;
         
         console.log('Snake started, isMoving:', this.snake.isMoving);
         console.log('Snake head position:', this.snake.head.x, this.snake.head.y);
         console.log('Snake direction:', this.snake.direction.x, this.snake.direction.y);
-    }
-
-    public togglePause(): void {
-        const gameState = (window as any).gameState;
-        if (!gameState.isGameOver && this.isGameStarted) {
-            gameState.isPaused = !gameState.isPaused;
-            
-            // Update pause button text
-            const text = this.pauseButton.getAt(1) as Phaser.GameObjects.Text;
-            text.setText(gameState.isPaused ? 'RESUME' : 'PAUSE');
-            
-            // Add button animation
-            this.tweens.add({
-                targets: this.pauseButton,
-                scaleX: 1.1,
-                scaleY: 1.1,
-                duration: 150,
-                ease: 'Power2',
-                yoyo: true
-            });
-            
-            // Add pause overlay effect
-            if (gameState.isPaused) {
-                this.createPauseOverlay();
-            } else {
-                this.removePauseOverlay();
-            }
-        }
     }
 
     // 添加公共方法来检查游戏状态
@@ -269,8 +232,8 @@ export class SnakeScene extends Phaser.Scene {
             gameState.isPaused = paused;
             
             // Update pause button text
-            const text = this.pauseButton.getAt(1) as Phaser.GameObjects.Text;
-            text.setText(gameState.isPaused ? 'RESUME' : 'PAUSE');
+            // const text = this.pauseButton.getAt(1) as Phaser.GameObjects.Text; // This line is removed
+            // text.setText(gameState.isPaused ? 'RESUME' : 'PAUSE'); // This line is removed
             
             // Add pause overlay effect
             if (gameState.isPaused) {
@@ -281,128 +244,206 @@ export class SnakeScene extends Phaser.Scene {
         }
     }
 
-    private pauseOverlay?: Phaser.GameObjects.Rectangle;
+    private pauseOverlay?: Phaser.GameObjects.Graphics;
     private pauseText?: Phaser.GameObjects.Text;
+    private pauseIcon?: Phaser.GameObjects.Graphics;
+    private pauseSubtitle?: Phaser.GameObjects.Text;
 
     private createPauseOverlay(): void {
-        // Create semi-transparent overlay
-        this.pauseOverlay = this.add.rectangle(
-            this.gameWidth / 2,
-            this.gameHeight / 2,
-            this.gameWidth,
-            this.gameHeight,
-            0x000000,
-            0.5
-        );
+        // Create gradient overlay with blur effect
+        this.pauseOverlay = this.add.graphics();
+        this.pauseOverlay.fillGradientStyle(0x000000, 0x000000, 0x1a1a1a, 0x1a1a1a, 0.7, 0.7, 0.9, 0.9);
+        this.pauseOverlay.fillRect(0, 0, this.gameWidth, this.gameHeight);
         
-        // Create pause text
+        // Create pause icon
+        const pauseIcon = this.add.graphics();
+        pauseIcon.fillStyle(0xffffff, 0.9);
+        pauseIcon.fillRect(-15, -30, 8, 60);
+        pauseIcon.fillRect(7, -30, 8, 60);
+        
+        // Create pause text with better styling
         this.pauseText = this.add.text(
             this.gameWidth / 2,
-            this.gameHeight / 2,
-            'PAUSED\nTap to Resume',
+            this.gameHeight / 2 + 60,
+            'TAP TO RESUME',
             {
-                fontSize: '48px',
+                fontSize: '32px',
                 color: '#ffffff',
-                fontFamily: 'Arial',
+                fontFamily: 'Arial, sans-serif',
                 fontStyle: 'bold',
-                align: 'center'
+                stroke: '#000000',
+                strokeThickness: 2,
+                shadow: {
+                    offsetX: 2,
+                    offsetY: 2,
+                    color: '#000000',
+                    blur: 4,
+                    fill: true
+                }
             }
         ).setOrigin(0.5);
         
-        // Add entrance animation
-        this.pauseOverlay.setAlpha(0);
-        this.pauseText.setAlpha(0);
-        this.pauseText.setScale(0.5);
+        // Create subtitle text
+        const subtitleText = this.add.text(
+            this.gameWidth / 2,
+            this.gameHeight / 2 + 100,
+            'Game Paused',
+            {
+                fontSize: '18px',
+                color: '#cccccc',
+                fontFamily: 'Arial, sans-serif',
+                fontStyle: 'italic'
+            }
+        ).setOrigin(0.5);
         
+        // Position pause icon
+        pauseIcon.setPosition(this.gameWidth / 2, this.gameHeight / 2 - 20);
+        
+        // Add entrance animation with staggered timing
+        this.pauseOverlay.setAlpha(0);
+        pauseIcon.setAlpha(0);
+        this.pauseText.setAlpha(0);
+        subtitleText.setAlpha(0);
+        this.pauseText.setScale(0.5);
+        pauseIcon.setScale(0.5);
+        
+        // Animate overlay first
         this.tweens.add({
-            targets: [this.pauseOverlay, this.pauseText],
+            targets: this.pauseOverlay,
             alpha: 1,
-            duration: 300,
+            duration: 400,
             ease: 'Power2'
         });
         
+        // Animate pause icon
         this.tweens.add({
-            targets: this.pauseText,
+            targets: pauseIcon,
+            alpha: 1,
             scaleX: 1,
             scaleY: 1,
-            duration: 300,
+            duration: 500,
+            delay: 200,
             ease: 'Back.easeOut'
         });
+        
+        // Animate main text
+        this.tweens.add({
+            targets: this.pauseText,
+            alpha: 1,
+            scaleX: 1,
+            scaleY: 1,
+            duration: 500,
+            delay: 300,
+            ease: 'Back.easeOut'
+        });
+        
+        // Animate subtitle
+        this.tweens.add({
+            targets: subtitleText,
+            alpha: 1,
+            duration: 400,
+            delay: 400,
+            ease: 'Power2'
+        });
 
-        // 添加点击事件处理，让用户可以点击恢复游戏
-        this.pauseOverlay.setInteractive();
+        // Add pulsing animation to text
+        this.tweens.add({
+            targets: this.pauseText,
+            alpha: 0.7,
+            duration: 1500,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: -1
+        });
+
+        // Make everything interactive
+        this.pauseOverlay.setInteractive(new Phaser.Geom.Rectangle(0, 0, this.gameWidth, this.gameHeight), Phaser.Geom.Rectangle.Contains);
         this.pauseText.setInteractive();
+        subtitleText.setInteractive();
         
         const resumeGame = () => {
             const gameState = (window as any).gameState;
             if (gameState && gameState.isPaused && !gameState.isGameOver && this.isGameStarted) {
                 console.log('用户点击屏幕恢复游戏');
-                this.togglePause();
+                this.setPauseState(false); // Changed from togglePause to setPauseState
             }
         };
         
         this.pauseOverlay.on('pointerdown', resumeGame);
         this.pauseText.on('pointerdown', resumeGame);
+        subtitleText.on('pointerdown', resumeGame);
+        
+        // Store references for cleanup
+        this.pauseIcon = pauseIcon;
+        this.pauseSubtitle = subtitleText;
     }
 
     private removePauseOverlay(): void {
         if (this.pauseOverlay && this.pauseText) {
             this.tweens.add({
-                targets: [this.pauseOverlay, this.pauseText],
+                targets: [this.pauseOverlay, this.pauseText, this.pauseIcon, this.pauseSubtitle],
                 alpha: 0,
                 duration: 200,
                 ease: 'Power2',
                 onComplete: () => {
                     this.pauseOverlay?.destroy();
                     this.pauseText?.destroy();
+                    this.pauseIcon?.destroy();
+                    this.pauseSubtitle?.destroy();
                     this.pauseOverlay = undefined;
                     this.pauseText = undefined;
+                    this.pauseIcon = undefined;
+                    this.pauseSubtitle = undefined;
                 }
             });
         }
     }
 
     private createStartCelebration(): void {
-        // Create celebration particles around the snake head
-        for (let i = 0; i < 15; i++) {
-            const particle = this.add.circle(
-                this.snake.head.x + (Math.random() - 0.5) * 80,
-                this.snake.head.y + (Math.random() - 0.5) * 80,
-                2,
-                0x4CAF50
-            );
-            
-            this.tweens.add({
-                targets: particle,
-                x: particle.x + (Math.random() - 0.5) * 150,
-                y: particle.y + (Math.random() - 0.5) * 150,
-                alpha: 0,
-                scale: 0,
-                duration: 800 + Math.random() * 400,
-                ease: 'Power2',
-                onComplete: () => {
-                    particle.destroy();
-                }
-            });
-        }
-        
-        // Add a brief flash effect
-        const flash = this.add.rectangle(
+        // Add "GAME START!" text only
+        const startText = this.add.text(
             this.gameWidth / 2,
-            this.gameHeight / 2,
-            this.gameWidth,
-            this.gameHeight,
-            0x4CAF50,
-            0.3
-        );
+            this.gameHeight / 2 - 100,
+            'GAME START!',
+            {
+                fontSize: '36px',
+                color: '#4CAF50',
+                fontFamily: 'Arial, sans-serif',
+                fontStyle: 'bold',
+                stroke: '#2E7D32',
+                strokeThickness: 3,
+                shadow: {
+                    offsetX: 2,
+                    offsetY: 2,
+                    color: '#000000',
+                    blur: 4,
+                    fill: true
+                }
+            }
+        ).setOrigin(0.5);
+        
+        startText.setAlpha(0);
+        startText.setScale(0.5);
         
         this.tweens.add({
-            targets: flash,
-            alpha: 0,
-            duration: 300,
-            ease: 'Power2',
+            targets: startText,
+            alpha: 1,
+            scaleX: 1,
+            scaleY: 1,
+            duration: 600,
+            ease: 'Back.easeOut',
             onComplete: () => {
-                flash.destroy();
+                this.tweens.add({
+                    targets: startText,
+                    alpha: 0,
+                    y: startText.y - 50,
+                    duration: 800,
+                    delay: 500,
+                    ease: 'Power2',
+                    onComplete: () => {
+                        startText.destroy();
+                    }
+                });
             }
         });
     }
@@ -411,9 +452,6 @@ export class SnakeScene extends Phaser.Scene {
         console.log('Food eaten!');
         this.snake.grow(1); // Grow by 1 segment
         this.food.reposition();
-        
-        // Show tutorial for regular food if not shown before
-        this.foodTutorialManager.showTutorial('regular-food');
         
         const gameState = (window as any).gameState;
         const scoreGain = 10;
@@ -575,17 +613,17 @@ export class SnakeScene extends Phaser.Scene {
             this.createGameOverParticles();
             
             // Hide pause button with animation
-            this.tweens.add({
-                targets: this.pauseButton,
-                alpha: 0,
-                scaleX: 0.8,
-                scaleY: 0.8,
-                duration: 300,
-                ease: 'Power2',
-                onComplete: () => {
-                    this.pauseButton.setVisible(false);
-                }
-            });
+            // this.tweens.add({ // This line is removed
+            //     targets: this.pauseButton, // This line is removed
+            //     alpha: 0, // This line is removed
+            //     scaleX: 0.8, // This line is removed
+            //     scaleY: 0.8, // This line is removed
+            //     duration: 300, // This line is removed
+            //     ease: 'Power2', // This line is removed
+            //     onComplete: () => { // This line is removed
+            //         this.pauseButton.setVisible(false); // This line is removed
+            //     } // This line is removed
+            // }); // This line is removed
             
             this.isGameStarted = false;
             
@@ -727,28 +765,98 @@ export class SnakeScene extends Phaser.Scene {
     }
 
     private createGameOverParticles(): void {
-        // Create simple particle effect using graphics
-        for (let i = 0; i < 20; i++) {
+        // Create dramatic particle effect with green colors
+        const colors = [0x4CAF50, 0x66BB6A, 0x81C784, 0xA5D6A7, 0x2E7D32];
+        const deathX = this.snake.head.x;
+        const deathY = this.snake.head.y;
+        
+        // Create explosion effect
+        for (let i = 0; i < 35; i++) {
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            const angle = (i / 35) * Math.PI * 2;
+            const distance = 30 + Math.random() * 50;
+            
             const particle = this.add.circle(
-                this.snake.head.x + (Math.random() - 0.5) * 100,
-                this.snake.head.y + (Math.random() - 0.5) * 100,
-                3,
-                0x4CAF50
+                deathX + Math.cos(angle) * distance,
+                deathY + Math.sin(angle) * distance,
+                4 + Math.random() * 4,
+                color
             );
             
+            // Add glow effect
+            const glow = this.add.circle(particle.x, particle.y, particle.radius + 8, color, 0.4);
+            
+            // Calculate final position
+            const finalX = deathX + Math.cos(angle) * (150 + Math.random() * 100);
+            const finalY = deathY + Math.sin(angle) * (150 + Math.random() * 100);
+            
             this.tweens.add({
-                targets: particle,
-                x: particle.x + (Math.random() - 0.5) * 200,
-                y: particle.y + (Math.random() - 0.5) * 200,
+                targets: [particle, glow],
+                x: finalX,
+                y: finalY,
                 alpha: 0,
                 scale: 0,
-                duration: 1000 + Math.random() * 500,
+                duration: 1200 + Math.random() * 800,
                 ease: 'Power2',
                 onComplete: () => {
                     particle.destroy();
+                    glow.destroy();
                 }
             });
         }
+        
+        // Create "GAME OVER" text with dramatic effect
+        const gameOverText = this.add.text(
+            this.gameWidth / 2,
+            this.gameHeight / 2 - 50,
+            'GAME OVER',
+            {
+                fontSize: '48px',
+                color: '#FF5722',
+                fontFamily: 'Arial, sans-serif',
+                fontStyle: 'bold',
+                stroke: '#D32F2F',
+                strokeThickness: 4,
+                shadow: {
+                    offsetX: 3,
+                    offsetY: 3,
+                    color: '#000000',
+                    blur: 6,
+                    fill: true
+                }
+            }
+        ).setOrigin(0.5);
+        
+        gameOverText.setAlpha(0);
+        gameOverText.setScale(0.3);
+        
+        this.tweens.add({
+            targets: gameOverText,
+            alpha: 1,
+            scaleX: 1.2,
+            scaleY: 1.2,
+            duration: 800,
+            ease: 'Back.easeOut',
+            onComplete: () => {
+                this.tweens.add({
+                    targets: gameOverText,
+                    scaleX: 1,
+                    scaleY: 1,
+                    duration: 200,
+                    ease: 'Power2'
+                });
+            }
+        });
+        
+        // Add pulsing effect to game over text
+        this.tweens.add({
+            targets: gameOverText,
+            alpha: 0.7,
+            duration: 1000,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: -1
+        });
     }
 
     public update(time: number): void {
@@ -758,154 +866,127 @@ export class SnakeScene extends Phaser.Scene {
         this.snake.update(time);
     }
 
-    private createPauseButton(): void {
-        const buttonWidth = 120;
-        const buttonHeight = 50;
-        const x = this.gameWidth - 80;
-        const y = 40;
-
-        // Create button background
-        const background = this.add.rectangle(x, y, buttonWidth, buttonHeight, 0xFF9800);
-        background.setStrokeStyle(2, 0xF57C00);
-
-        // Create button text
-        const text = this.add.text(x, y, 'PAUSE', {
-            fontSize: '18px',
-            color: '#ffffff',
-            fontFamily: 'Arial'
-        }).setOrigin(0.5);
-
-        // Create container first
-        this.pauseButton = this.add.container(x, y, [background, text]);
-        this.pauseButton.setActive(true).setVisible(false);
-
-        // Make the rectangle itself interactive
-        background.setInteractive();
-
-        // Add hover effects (desktop only)
-        if (!this.isMobileDevice()) {
-            background.on('pointerover', () => {
-                this.tweens.add({
-                    targets: this.pauseButton,
-                    scaleX: 1.05,
-                    scaleY: 1.05,
-                    duration: 150,
-                    ease: 'Power2'
-                });
-                background.setFillStyle(0xFFB74D);
-            });
-
-            background.on('pointerout', () => {
-                this.tweens.add({
-                    targets: this.pauseButton,
-                    scaleX: 1,
-                    scaleY: 1,
-                    duration: 150,
-                    ease: 'Power2'
-                });
-                background.setFillStyle(0xFF9800);
-            });
-        }
-
-        // Add click effect
-        background.on('pointerdown', () => {
-            this.tweens.add({
-                targets: this.pauseButton,
-                scaleX: 0.95,
-                scaleY: 0.95,
-                duration: 100,
-                ease: 'Power2',
-                yoyo: true
-            });
-        });
-
-        // Add click handler
-        background.on('pointerup', () => {
-            this.togglePause();
-        });
-    }
-
-    private isMobileDevice(): boolean {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-               ('ontouchstart' in window) ||
-               (navigator.maxTouchPoints > 0);
-    }
-
     private createMobileControls(): void {
-        // Create unified instruction text
+        // Create modern instruction text with gradient background
+        const instructionBg = this.add.graphics();
+        instructionBg.fillGradientStyle(0x4CAF50, 0x45A049, 0x388E3C, 0x2E7D32, 0.8, 0.8, 0.9, 0.9);
+        instructionBg.fillRoundedRect(
+            this.gameWidth / 2 - 200, 
+            this.gameHeight + 10, 
+            400, 
+            30, 
+            15
+        );
+        instructionBg.lineStyle(2, 0x66BB6A, 1);
+        instructionBg.strokeRoundedRect(
+            this.gameWidth / 2 - 200, 
+            this.gameHeight + 10, 
+            400, 
+            30, 
+            15
+        );
+
         const instructionText = this.add.text(
             this.gameWidth / 2,
-            this.gameHeight + 20,
-            'Use arrow keys, mouse drag, or swipe to control',
+            this.gameHeight + 25,
+            '🎮 Use WASD keys, mouse drag, or swipe to control',
             {
-                fontSize: '14px',
+                fontSize: '16px',
                 color: '#ffffff',
-                fontFamily: 'Arial',
-                backgroundColor: '#333333',
-                padding: { x: 10, y: 5 }
+                fontFamily: 'Arial, sans-serif',
+                fontStyle: 'bold',
+                stroke: '#2E7D32',
+                strokeThickness: 1
             }
         ).setOrigin(0.5);
 
         // Create direction indicators (only for mobile)
-        if (this.isMobileDevice()) {
-            const indicatorSize = 40;
-            const indicatorColor = 0x4CAF50;
-            const indicatorAlpha = 0.3;
+        if (isMobile) {
+            const centerX = this.gameWidth / 2;
+            const centerY = this.gameHeight + 80;
+            const arrowSize = 20;
+            const arrowColor = 0x4CAF50;
+            const arrowAlpha = 0.6;
 
-            // Up arrow
+            // Create circular background for arrows
+            const arrowBg = this.add.graphics();
+            arrowBg.fillStyle(0xffffff, 0.1);
+            arrowBg.fillCircle(centerX, centerY, 60);
+            arrowBg.lineStyle(2, 0x4CAF50, 0.3);
+            arrowBg.strokeCircle(centerX, centerY, 60);
+
+            // Up arrow with gradient
             const upArrow = this.add.graphics();
-            upArrow.fillStyle(indicatorColor, indicatorAlpha);
+            upArrow.fillGradientStyle(arrowColor, arrowColor, 0x66BB6A, 0x66BB6A, arrowAlpha, arrowAlpha, 0.8, 0.8);
             upArrow.fillTriangle(
-                this.gameWidth / 2, this.gameHeight + 80,
-                this.gameWidth / 2 - 15, this.gameHeight + 100,
-                this.gameWidth / 2 + 15, this.gameHeight + 100
+                centerX, centerY - 25,
+                centerX - arrowSize, centerY - 5,
+                centerX + arrowSize, centerY - 5
             );
 
-            // Down arrow
+            // Down arrow with gradient
             const downArrow = this.add.graphics();
-            downArrow.fillStyle(indicatorColor, indicatorAlpha);
+            downArrow.fillGradientStyle(arrowColor, arrowColor, 0x66BB6A, 0x66BB6A, arrowAlpha, arrowAlpha, 0.8, 0.8);
             downArrow.fillTriangle(
-                this.gameWidth / 2, this.gameHeight + 120,
-                this.gameWidth / 2 - 15, this.gameHeight + 100,
-                this.gameWidth / 2 + 15, this.gameHeight + 100
+                centerX, centerY + 25,
+                centerX - arrowSize, centerY + 5,
+                centerX + arrowSize, centerY + 5
             );
 
-            // Left arrow
+            // Left arrow with gradient
             const leftArrow = this.add.graphics();
-            leftArrow.fillStyle(indicatorColor, indicatorAlpha);
+            leftArrow.fillGradientStyle(arrowColor, arrowColor, 0x66BB6A, 0x66BB6A, arrowAlpha, arrowAlpha, 0.8, 0.8);
             leftArrow.fillTriangle(
-                this.gameWidth / 2 - 20, this.gameHeight + 110,
-                this.gameWidth / 2, this.gameHeight + 95,
-                this.gameWidth / 2, this.gameHeight + 125
+                centerX - 25, centerY,
+                centerX - 5, centerY - arrowSize,
+                centerX - 5, centerY + arrowSize
             );
 
-            // Right arrow
+            // Right arrow with gradient
             const rightArrow = this.add.graphics();
-            rightArrow.fillStyle(indicatorColor, indicatorAlpha);
+            rightArrow.fillGradientStyle(arrowColor, arrowColor, 0x66BB6A, 0x66BB6A, arrowAlpha, arrowAlpha, 0.8, 0.8);
             rightArrow.fillTriangle(
-                this.gameWidth / 2 + 20, this.gameHeight + 110,
-                this.gameWidth / 2, this.gameHeight + 95,
-                this.gameWidth / 2, this.gameHeight + 125
+                centerX + 25, centerY,
+                centerX + 5, centerY - arrowSize,
+                centerX + 5, centerY + arrowSize
             );
+
+            // Add pulsing animation to arrows
+            [upArrow, downArrow, leftArrow, rightArrow].forEach((arrow, index) => {
+                this.tweens.add({
+                    targets: arrow,
+                    alpha: 0.3,
+                    duration: 1500,
+                    delay: index * 200,
+                    ease: 'Sine.easeInOut',
+                    yoyo: true,
+                    repeat: -1
+                });
+            });
 
             // Store references for cleanup
             this.mobileControls = {
                 instructionText,
+                instructionBg,
+                arrowBg,
                 upArrow,
                 downArrow,
                 leftArrow,
                 rightArrow
             };
         } else {
-            // For desktop, only store the instruction text
+            // For desktop, only store the instruction text and background
             this.mobileControls = {
-                instructionText
+                instructionText,
+                instructionBg
             };
         }
     }
 
     private mobileControls?: {
         instructionText: Phaser.GameObjects.Text;
+        instructionBg?: Phaser.GameObjects.Graphics;
+        arrowBg?: Phaser.GameObjects.Graphics;
         upArrow?: Phaser.GameObjects.Graphics;
         downArrow?: Phaser.GameObjects.Graphics;
         leftArrow?: Phaser.GameObjects.Graphics;
@@ -947,17 +1028,14 @@ export class SnakeScene extends Phaser.Scene {
         this.portalManager.start();
         
         // Show pause button with animation
-        this.pauseButton.setVisible(true);
-        this.pauseButton.setAlpha(0);
-        this.pauseButton.setScale(0.8);
-        this.tweens.add({
-            targets: this.pauseButton,
-            alpha: 1,
-            scaleX: 1,
-            scaleY: 1,
-            duration: 300,
-            ease: 'Power2'
-        });
+        // this.tweens.add({ // This line is removed
+        //     targets: this.pauseButton, // This line is removed
+        //     alpha: 1, // This line is removed
+        //     scaleX: 1, // This line is removed
+        //     scaleY: 1, // This line is removed
+        //     duration: 300, // This line is removed
+        //     ease: 'Power2' // This line is removed
+        // }); // This line is removed
         
         this.isGameStarted = true;
         
@@ -970,71 +1048,167 @@ export class SnakeScene extends Phaser.Scene {
     }
 
     private createRevivalCelebration(): void {
-        // Create revival particles around the snake head
-        for (let i = 0; i < 20; i++) {
+        // Create revival particles with golden colors
+        const colors = [0xFFD700, 0xFFA500, 0xFF8C00, 0xFF6347, 0x4CAF50];
+        for (let i = 0; i < 30; i++) {
+            const color = colors[Math.floor(Math.random() * colors.length)];
             const particle = this.add.circle(
-                this.snake.head.x + (Math.random() - 0.5) * 100,
-                this.snake.head.y + (Math.random() - 0.5) * 100,
-                3,
-                0x4CAF50
+                this.snake.head.x + (Math.random() - 0.5) * 120,
+                this.snake.head.y + (Math.random() - 0.5) * 120,
+                4 + Math.random() * 4,
+                color
             );
             
+            // Add golden glow effect
+            const glow = this.add.circle(particle.x, particle.y, particle.radius + 10, color, 0.5);
+            
             this.tweens.add({
-                targets: particle,
-                x: particle.x + (Math.random() - 0.5) * 200,
-                y: particle.y + (Math.random() - 0.5) * 200,
+                targets: [particle, glow],
+                x: particle.x + (Math.random() - 0.5) * 250,
+                y: particle.y + (Math.random() - 0.5) * 250,
                 alpha: 0,
                 scale: 0,
-                duration: 1000 + Math.random() * 500,
+                duration: 1200 + Math.random() * 600,
                 ease: 'Power2',
                 onComplete: () => {
                     particle.destroy();
+                    glow.destroy();
                 }
             });
         }
         
-        // Add a revival flash effect
-        const flash = this.add.rectangle(
-            this.gameWidth / 2,
-            this.gameHeight / 2,
-            this.gameWidth,
-            this.gameHeight,
-            0x4CAF50,
-            0.3
-        );
+        // Create golden rings effect
+        for (let i = 0; i < 4; i++) {
+            const ring = this.add.circle(
+                this.snake.head.x,
+                this.snake.head.y,
+                25 + i * 35,
+                0xFFD700,
+                0
+            );
+            ring.setStrokeStyle(4, 0xFFD700, 0.9);
+            
+            this.tweens.add({
+                targets: ring,
+                radius: 180 + i * 60,
+                alpha: 0,
+                duration: 1000 + i * 250,
+                delay: i * 120,
+                ease: 'Power2',
+                onComplete: () => {
+                    ring.destroy();
+                }
+            });
+        }
+        
+        // Add a golden gradient flash effect
+        const flash = this.add.graphics();
+        flash.fillGradientStyle(0xFFD700, 0xFFA500, 0xFF8C00, 0x4CAF50, 0.5, 0.5, 0.3, 0.3);
+        flash.fillRect(0, 0, this.gameWidth, this.gameHeight);
         
         this.tweens.add({
             targets: flash,
             alpha: 0,
-            duration: 500,
+            duration: 600,
             ease: 'Power2',
             onComplete: () => {
                 flash.destroy();
             }
         });
         
-        // Add revival text
+        // Add revival text with golden effect
         const revivalText = this.add.text(
             this.gameWidth / 2,
             this.gameHeight / 2 - 100,
             'REVIVED!',
             {
-                fontSize: '36px',
-                color: '#4CAF50',
-                fontFamily: 'Arial',
-                fontStyle: 'bold'
+                fontSize: '42px',
+                color: '#FFD700',
+                fontFamily: 'Arial, sans-serif',
+                fontStyle: 'bold',
+                stroke: '#FFA500',
+                strokeThickness: 3,
+                shadow: {
+                    offsetX: 3,
+                    offsetY: 3,
+                    color: '#000000',
+                    blur: 6,
+                    fill: true
+                }
             }
         ).setOrigin(0.5);
         
+        revivalText.setAlpha(0);
+        revivalText.setScale(0.3);
+        
         this.tweens.add({
             targets: revivalText,
-            alpha: 0,
-            y: revivalText.y - 50,
-            duration: 2000,
-            ease: 'Power2',
+            alpha: 1,
+            scaleX: 1.3,
+            scaleY: 1.3,
+            duration: 700,
+            ease: 'Back.easeOut',
             onComplete: () => {
-                revivalText.destroy();
+                this.tweens.add({
+                    targets: revivalText,
+                    scaleX: 1,
+                    scaleY: 1,
+                    duration: 200,
+                    ease: 'Power2'
+                });
             }
         });
+        
+        // Add pulsing and floating animation
+        this.tweens.add({
+            targets: revivalText,
+            alpha: 0.8,
+            y: revivalText.y - 30,
+            duration: 1500,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: 1,
+            onComplete: () => {
+                this.tweens.add({
+                    targets: revivalText,
+                    alpha: 0,
+                    y: revivalText.y - 50,
+                    duration: 800,
+                    ease: 'Power2',
+                    onComplete: () => {
+                        revivalText.destroy();
+                    }
+                });
+            }
+        });
+        
+        // Add sparkle effects around the text
+        for (let i = 0; i < 8; i++) {
+            const sparkle = this.add.text(
+                revivalText.x + (Math.random() - 0.5) * 200,
+                revivalText.y + (Math.random() - 0.5) * 100,
+                '✨',
+                {
+                    fontSize: '24px',
+                    color: '#FFD700'
+                }
+            ).setOrigin(0.5);
+            
+            sparkle.setAlpha(0);
+            
+            this.tweens.add({
+                targets: sparkle,
+                alpha: 1,
+                scaleX: 1.5,
+                scaleY: 1.5,
+                duration: 400,
+                delay: i * 100,
+                ease: 'Back.easeOut',
+                yoyo: true,
+                onComplete: () => {
+                    sparkle.destroy();
+                }
+            });
+        }
     }
 } 

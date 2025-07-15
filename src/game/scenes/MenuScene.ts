@@ -39,10 +39,10 @@ export class MenuScene extends Phaser.Scene {
 
         // Add game instructions below the start button
         const instructions = [
-            '🎮 Controls: Arrow keys, mouse drag, or swipe to control the snake',
+            '🎮 Controls: WASD keys, mouse drag, or swipe to control the snake',
             '🍎 Goal: Eat food to grow and increase your score',
             '⚠️ Avoid: Walls and your own body!',
-            '💡 Desktop: Use arrow keys or click & drag',
+            '💡 Desktop: Use WASD keys or click & drag',
             '💡 Mobile: Swipe in any direction to move'
         ];
         const instructionsText = this.add.text(centerX, centerY + 120, instructions.join('\n'), {
@@ -92,24 +92,7 @@ export class MenuScene extends Phaser.Scene {
         // Make the background interactive
         background.setInteractive(new Phaser.Geom.Rectangle(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
 
-        // Add hover effects
-        background.on('pointerover', () => {
-            // Change gradient on hover
-            background.clear();
-            background.fillGradientStyle(0x42A5F5, 0x2196F3, 0x1976D2, 0x1565C0, 1);
-            background.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, borderRadius);
-            background.lineStyle(3, 0x64B5F6, 1);
-            background.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, borderRadius);
-        });
-
-        background.on('pointerout', () => {
-            // Restore original gradient
-            background.clear();
-            background.fillGradientStyle(0x2196F3, 0x1976D2, 0x1565C0, 0x0D47A1, 1);
-            background.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, borderRadius);
-            background.lineStyle(3, 0x42A5F5, 1);
-            background.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, borderRadius);
-        });
+        // Hover effects removed
 
         // Add click effect
         background.on('pointerdown', () => {

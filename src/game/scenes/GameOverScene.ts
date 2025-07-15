@@ -1,9 +1,9 @@
 import { EventBus } from '../EventBus';
 
 export class GameOverScene extends Phaser.Scene {
-    private restartButton!: Phaser.GameObjects.Rectangle;
-    private menuButton!: Phaser.GameObjects.Rectangle;
-    private reviveButton!: Phaser.GameObjects.Rectangle;
+    private restartButton!: Phaser.GameObjects.Container;
+    private menuButton!: Phaser.GameObjects.Container;
+    private reviveButton!: Phaser.GameObjects.Container;
     private restartButtonText!: Phaser.GameObjects.Text;
     private menuButtonText!: Phaser.GameObjects.Text;
     private reviveButtonText!: Phaser.GameObjects.Text;
@@ -11,6 +11,7 @@ export class GameOverScene extends Phaser.Scene {
     private scoreText!: Phaser.GameObjects.Text;
     private highScoreText!: Phaser.GameObjects.Text;
     private finalScore: number = 0;
+    private isWatchingAd: boolean = false;
 
     constructor() {
         super({ key: 'GameOverScene' });
@@ -82,47 +83,52 @@ export class GameOverScene extends Phaser.Scene {
     private createReviveButton(x: number, y: number): void {
         const buttonWidth = 240;
         const buttonHeight = 60;
+        const borderRadius = 30;
 
-        // Create button background with special revive styling
-        const background = this.add.rectangle(x, y, buttonWidth, buttonHeight, 0x4CAF50);
-        background.setStrokeStyle(3, 0x388E3C);
-        background.setActive(true).setVisible(true);
+        // Create button background with modern gradient
+        const background = this.add.graphics();
+        background.fillGradientStyle(0x4CAF50, 0x45A049, 0x388E3C, 0x2E7D32, 1);
+        background.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, borderRadius);
+        
+        // Add border with gradient
+        background.lineStyle(3, 0x66BB6A, 1);
+        background.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, borderRadius);
 
         // Create button text with ad icon
-        const text = this.add.text(x, y, '📺 REVIVE BY WATCH AD', {
+        const text = this.add.text(0, 0, '📺 REVIVE BY WATCH AD', {
             fontSize: '18px',
             color: '#ffffff',
-            fontFamily: 'Arial',
-            fontStyle: 'bold'
+            fontFamily: 'Arial, sans-serif',
+            fontStyle: 'bold',
+            stroke: '#2E7D32',
+            strokeThickness: 1
         }).setOrigin(0.5);
-        text.setActive(true).setVisible(true);
 
-        // Store references
-        this.reviveButton = background;
-        this.reviveButtonText = text;
+        // Create container with all elements
+        this.reviveButton = this.add.container(x, y, [background, text]);
+        this.reviveButton.setActive(true).setVisible(true);
 
-        // Make background interactive directly
-        background.setInteractive(new Phaser.Geom.Rectangle(0, 0, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
+        // Make the background interactive
+        background.setInteractive(new Phaser.Geom.Rectangle(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
 
-        // Add hover effects to background
-        background.on('pointerover', () => {
-            background.setFillStyle(0x66BB6A);
-            background.setStrokeStyle(3, 0x4CAF50);
-        });
+        // Hover effects removed
 
-        background.on('pointerout', () => {
-            background.setFillStyle(0x4CAF50);
-            background.setStrokeStyle(3, 0x388E3C);
-        });
-
-        // Add click handler to background
+        // Add click effect
         background.on('pointerdown', () => {
+            // 移除缩放效果，只保留点击功能
+        });
+
+        // Add click handler
+        background.on('pointerup', () => {
             this.watchAdAndRevive();
         });
         
-        // Also make text interactive and pass through to background
-        text.setInteractive(new Phaser.Geom.Rectangle(0, 0, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
+        // Also make text interactive
+        text.setInteractive(new Phaser.Geom.Rectangle(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
         text.on('pointerdown', () => {
+            // 移除缩放效果，只保留点击功能
+        });
+        text.on('pointerup', () => {
             this.watchAdAndRevive();
         });
     }
@@ -130,47 +136,52 @@ export class GameOverScene extends Phaser.Scene {
     private createRestartButton(x: number, y: number): void {
         const buttonWidth = 200;
         const buttonHeight = 60;
+        const borderRadius = 30;
 
-        // Create button background - direct rectangle like MenuScene
-        const background = this.add.rectangle(x, y, buttonWidth, buttonHeight, 0xFF6B6B);
-        background.setStrokeStyle(3, 0xE53E3E);
-        background.setActive(true).setVisible(true);
+        // Create button background with modern gradient
+        const background = this.add.graphics();
+        background.fillGradientStyle(0xFF6B6B, 0xFF5252, 0xE53E3E, 0xD32F2F, 1);
+        background.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, borderRadius);
+        
+        // Add border with gradient
+        background.lineStyle(3, 0xFF8A80, 1);
+        background.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, borderRadius);
 
-        // Create button text
-        const text = this.add.text(x, y, 'PLAY AGAIN', {
+        // Create button text with better styling
+        const text = this.add.text(0, 0, 'PLAY AGAIN', {
             fontSize: '20px',
             color: '#ffffff',
-            fontFamily: 'Arial',
-            fontStyle: 'bold'
+            fontFamily: 'Arial, sans-serif',
+            fontStyle: 'bold',
+            stroke: '#D32F2F',
+            strokeThickness: 1
         }).setOrigin(0.5);
-        text.setActive(true).setVisible(true);
 
-        // Store references
-        this.restartButton = background;
-        this.restartButtonText = text;
+        // Create container with all elements
+        this.restartButton = this.add.container(x, y, [background, text]);
+        this.restartButton.setActive(true).setVisible(true);
 
-        // Make background interactive directly
-        background.setInteractive(new Phaser.Geom.Rectangle(0, 0, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
+        // Make the background interactive
+        background.setInteractive(new Phaser.Geom.Rectangle(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
 
-        // Add hover effects to background
-        background.on('pointerover', () => {
-            background.setFillStyle(0xFF8A80);
-            background.setStrokeStyle(3, 0xFF6B6B);
-        });
+        // Hover effects removed
 
-        background.on('pointerout', () => {
-            background.setFillStyle(0xFF6B6B);
-            background.setStrokeStyle(3, 0xE53E3E);
-        });
-
-        // Add click handler to background
+        // Add click effect
         background.on('pointerdown', () => {
+            // 移除缩放效果，只保留点击功能
+        });
+
+        // Add click handler
+        background.on('pointerup', () => {
             this.restartGame();
         });
         
-        // Also make text interactive and pass through to background
-        text.setInteractive(new Phaser.Geom.Rectangle(0, 0, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
+        // Also make text interactive
+        text.setInteractive(new Phaser.Geom.Rectangle(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
         text.on('pointerdown', () => {
+            // 移除缩放效果，只保留点击功能
+        });
+        text.on('pointerup', () => {
             this.restartGame();
         });
     }
@@ -178,62 +189,74 @@ export class GameOverScene extends Phaser.Scene {
     private createMenuButton(x: number, y: number): void {
         const buttonWidth = 200;
         const buttonHeight = 60;
+        const borderRadius = 30;
 
-        // Create button background - direct rectangle like MenuScene
-        const background = this.add.rectangle(x, y, buttonWidth, buttonHeight, 0x666666);
-        background.setStrokeStyle(3, 0x444444);
-        background.setActive(true).setVisible(true);
+        // Create button background with modern gradient - dark blue colors
+        const background = this.add.graphics();
+        background.fillGradientStyle(0x1a237e, 0x283593, 0x303f9f, 0x3949ab, 1);
+        background.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, borderRadius);
+        
+        // Add border with gradient
+        background.lineStyle(3, 0x5c6bc0, 1);
+        background.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, borderRadius);
 
-        // Create button text
-        const text = this.add.text(x, y, 'MAIN MENU', {
+        // Create button text with better styling
+        const text = this.add.text(0, 0, 'MAIN MENU', {
             fontSize: '20px',
             color: '#ffffff',
-            fontFamily: 'Arial',
-            fontStyle: 'bold'
+            fontFamily: 'Arial, sans-serif',
+            fontStyle: 'bold',
+            stroke: '#1a237e',
+            strokeThickness: 1
         }).setOrigin(0.5);
-        text.setActive(true).setVisible(true);
 
-        // Store references
-        this.menuButton = background;
-        this.menuButtonText = text;
+        // Create container with all elements
+        this.menuButton = this.add.container(x, y, [background, text]);
+        this.menuButton.setActive(true).setVisible(true);
 
-        // Make background interactive directly
-        background.setInteractive(new Phaser.Geom.Rectangle(0, 0, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
+        // Make the background interactive
+        background.setInteractive(new Phaser.Geom.Rectangle(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
 
-        // Add hover effects to background
-        background.on('pointerover', () => {
-            background.setFillStyle(0x888888);
-            background.setStrokeStyle(3, 0x666666);
-        });
+        // Hover effects removed
 
-        background.on('pointerout', () => {
-            background.setFillStyle(0x666666);
-            background.setStrokeStyle(3, 0x444444);
-        });
-
-        // Add click handler to background
+        // Add click effect
         background.on('pointerdown', () => {
+            // 移除缩放效果，只保留点击功能
+        });
+
+        // Add click handler
+        background.on('pointerup', () => {
             this.goToMenu();
         });
         
-        // Also make text interactive and pass through to background
-        text.setInteractive(new Phaser.Geom.Rectangle(0, 0, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
+        // Also make text interactive
+        text.setInteractive(new Phaser.Geom.Rectangle(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
         text.on('pointerdown', () => {
+            // 移除缩放效果，只保留点击功能
+        });
+        text.on('pointerup', () => {
             this.goToMenu();
         });
     }
 
+
+
     private watchAdAndRevive(): void {
-        console.log('Starting ad watch for revive...');
+        if (this.isWatchingAd) return; // Prevent multiple clicks
         
-        // Disable all buttons during ad
-        this.reviveButton.setInteractive(false);
-        this.restartButton.setInteractive(false);
-        this.menuButton.setInteractive(false);
+        console.log('Starting ad watch for revive...');
+        this.isWatchingAd = true;
         
         // Change revive button to show loading state
-        this.reviveButton.setFillStyle(0x666666);
-        this.reviveButtonText.setText('📺 WATCHING AD...');
+        const background = this.reviveButton.getAt(0) as Phaser.GameObjects.Graphics;
+        background.clear();
+        background.fillGradientStyle(0x666666, 0x555555, 0x444444, 0x333333, 1);
+        background.fillRoundedRect(-120, -30, 240, 60, 30);
+        background.lineStyle(3, 0x888888, 1);
+        background.strokeRoundedRect(-120, -30, 240, 60, 30);
+        
+        const text = this.reviveButton.getAt(1) as Phaser.GameObjects.Text;
+        text.setText('📺 WATCHING AD...');
         
         // Create loading animation
         this.createAdLoadingEffect();
@@ -268,7 +291,7 @@ export class GameOverScene extends Phaser.Scene {
             });
         }
         
-        // Add pulsing effect to revive button
+        // Add pulsing effect to revive button during ad watching
         this.tweens.add({
             targets: this.reviveButton,
             scaleX: 1.05,
@@ -286,13 +309,18 @@ export class GameOverScene extends Phaser.Scene {
         this.createReviveSuccessEffect();
         
         // Change button text to show success
-        this.reviveButtonText.setText('✅ REVIVED!');
-        this.reviveButton.setFillStyle(0x4CAF50);
+        const text = this.reviveButton.getAt(1) as Phaser.GameObjects.Text;
+        text.setText('✅ REVIVED!');
         
-        // Re-enable all buttons
-        this.reviveButton.setInteractive(true);
-        this.restartButton.setInteractive(true);
-        this.menuButton.setInteractive(true);
+        const background = this.reviveButton.getAt(0) as Phaser.GameObjects.Graphics;
+        background.clear();
+        background.fillGradientStyle(0x4CAF50, 0x45A049, 0x388E3C, 0x2E7D32, 1);
+        background.fillRoundedRect(-120, -30, 240, 60, 30);
+        background.lineStyle(3, 0x66BB6A, 1);
+        background.strokeRoundedRect(-120, -30, 240, 60, 30);
+        
+        // Reset the ad watching flag
+        this.isWatchingAd = false;
         
         // After a short delay, revive the player
         this.time.delayedCall(1000, () => {
@@ -324,25 +352,7 @@ export class GameOverScene extends Phaser.Scene {
             });
         }
         
-        // Add a brief flash effect
-        const flash = this.add.rectangle(
-            this.cameras.main.centerX,
-            this.cameras.main.centerY,
-            this.cameras.main.width,
-            this.cameras.main.height,
-            0x4CAF50,
-            0.2
-        );
-        
-        this.tweens.add({
-            targets: flash,
-            alpha: 0,
-            duration: 300,
-            ease: 'Power2',
-            onComplete: () => {
-                flash.destroy();
-            }
-        });
+        // 移除flash效果，只保留粒子动画
     }
 
     private revivePlayer(): void {
@@ -359,7 +369,7 @@ export class GameOverScene extends Phaser.Scene {
         
         // Add exit animation - include the new revive button
         this.tweens.add({
-            targets: [this.titleText, this.scoreText, this.highScoreText, this.restartButton, this.menuButton, this.reviveButton, this.restartButtonText, this.menuButtonText, this.reviveButtonText],
+            targets: [this.titleText, this.scoreText, this.highScoreText, this.restartButton, this.menuButton, this.reviveButton, this.reviveButtonText],
             alpha: 0,
             scaleX: 0.8,
             scaleY: 0.8,
@@ -462,7 +472,7 @@ export class GameOverScene extends Phaser.Scene {
         
         // Add exit animation - include button texts and revive button
         this.tweens.add({
-            targets: [this.titleText, this.scoreText, this.highScoreText, this.restartButton, this.menuButton, this.reviveButton, this.restartButtonText, this.menuButtonText, this.reviveButtonText],
+            targets: [this.titleText, this.scoreText, this.highScoreText, this.restartButton, this.menuButton, this.reviveButton, this.reviveButtonText],
             alpha: 0,
             scaleX: 0.8,
             scaleY: 0.8,
@@ -480,7 +490,7 @@ export class GameOverScene extends Phaser.Scene {
         
         // Add exit animation - include button texts and revive button
         this.tweens.add({
-            targets: [this.titleText, this.scoreText, this.highScoreText, this.restartButton, this.menuButton, this.reviveButton, this.restartButtonText, this.menuButtonText, this.reviveButtonText],
+            targets: [this.titleText, this.scoreText, this.highScoreText, this.restartButton, this.menuButton, this.reviveButton, this.reviveButtonText],
             alpha: 0,
             scaleX: 0.8,
             scaleY: 0.8,

@@ -32,12 +32,7 @@
             color: #ccc;
         }
         
-        .info {
-            background: #333;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
+
         
         .log {
             background: #000;
@@ -101,24 +96,9 @@
     <div class="container">
         <h1>🎮 Swipe Test - Optimized Implementation</h1>
         
-        <div class="info">
-            <h3>✅ What's Fixed:</h3>
-            <ul>
-                <li><strong>No Duplicate Listeners:</strong> Removed canvas-specific Phaser input events</li>
-                <li><strong>Global Only:</strong> Using only document-level event listeners</li>
-                <li><strong>Canvas Bounds Check:</strong> Only starts drag when clicking inside canvas</li>
-                <li><strong>Clean State Management:</strong> Proper drag state tracking</li>
-            </ul>
-        </div>
+
         
         <div class="test-area" id="testArea">
-            <div style="text-align: center;">
-                <div style="font-size: 24px; margin-bottom: 10px;">🎯 Test Area</div>
-                <div>Click and drag here or anywhere on the page</div>
-                <div style="font-size: 14px; margin-top: 10px; color: #888;">
-                    Try dragging outside the canvas and releasing!
-                </div>
-            </div>
         </div>
         
         <div class="controls">
@@ -345,7 +325,7 @@
         // Initial log
         log('🚀 Optimized swipe detection initialized', 'info');
         log('📱 Only global event listeners are used (no duplicates)', 'info');
-        log('🎯 Try dragging inside or outside the test area!', 'info');
+
     </script>
 </body>
 </html> 
