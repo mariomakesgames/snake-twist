@@ -4,6 +4,7 @@ import { Food } from '../entities/food/Food';
 import { GrowthBoostFood } from '../entities/food/good/GrowthBoostFood';
 import { SpeedBoostFood } from '../entities/food/good/SpeedBoostFood';
 import { PortalManager } from '../entities/items/special/portal/PortalManager';
+import { ObstacleManager } from '../entities/obstacles/ObstacleManager';
 import { ScoreIndicator } from '../entities/ScoreIndicator';
 import { SegmentDrop } from '../entities/SegmentDrop';
 import { Snake } from '../entities/Snake';
@@ -22,6 +23,7 @@ export class SnakeScene extends Phaser.Scene {
     public speedBoostFood!: SpeedBoostFood;
     public slowFood!: SlowFood;
     public portalManager!: PortalManager;
+    public obstacleManager!: ObstacleManager;
     public gameSpeed: number;
     private gridSize: number;
     private gameWidth: number;
@@ -55,18 +57,30 @@ export class SnakeScene extends Phaser.Scene {
         console.log('SnakeScene create() called');
         console.log('Game dimensions:', this.gameWidth, 'x', this.gameHeight);
         
+        // Get game state early to check for revival
+        const gameState = (window as any).gameState;
+        
         // Create background
         this.add.rectangle(0, 0, this.gameWidth, this.gameHeight, 0x222222).setOrigin(0, 0);
         
         // Create grid pattern
         this.createGrid();
         
-        // Initialize snake at grid center
+        // Create portal manager
+        this.portalManager = new PortalManager(this);
+        
+        // Create obstacle manager and generate obstacles FIRST
+        this.obstacleManager = new ObstacleManager(this);
+        
+        // 调试模式：强制重新生成障碍物，忽略保存的数据
+        this.obstacleManager.generateObstacles();
+        
+        // Initialize snake at grid center (after obstacles)
         const centerX = Math.floor(this.gameWidth / this.gridSize / 2) * this.gridSize + this.gridSize / 2;
         const centerY = Math.floor(this.gameHeight / this.gridSize / 2) * this.gridSize + this.gridSize / 2;
         this.snake = new Snake(this, centerX, centerY);
         
-        // Create regular food
+        // Create regular food (after obstacles)
         this.food = new Food(this);
         
         // Create growth boost food (yellow)
@@ -80,9 +94,6 @@ export class SnakeScene extends Phaser.Scene {
         
         // Create slow food (pink)
         this.slowFood = new SlowFood(this);
-        
-        // Create portal manager
-        this.portalManager = new PortalManager(this);
         
         // Initialize tutorial manager
         this.foodTutorialManager = new FoodTutorialManager(this);
@@ -111,14 +122,8 @@ export class SnakeScene extends Phaser.Scene {
         // Create mobile controls if on mobile device
         this.createMobileControls();
         
-        // Check if this is a revival
-        const gameState = (window as any).gameState;
-        if (gameState && gameState.isReviving) {
-            this.reviveGame();
-        } else {
-            // Auto start the game for new games
-            this.autoStartGame();
-        }
+        // 调试模式：总是重新开始游戏，忽略复活状态
+        this.autoStartGame();
         
         // Initialize game state
         if (gameState) {
@@ -136,6 +141,63 @@ export class SnakeScene extends Phaser.Scene {
         
         // Notify that scene is ready
         EventBus.emit('current-scene-ready', this);
+    }
+
+    private findValidSnakePosition(centerX: number, centerY: number): { x: number, y: number } {
+        const gridSize = this.gridSize;
+        const gameWidth = this.gameWidth;
+        const gameHeight = this.gameHeight;
+        
+        // Try the center position first
+        if (!this.isPositionOccupied(centerX, centerY)) {
+            return { x: centerX, y: centerY };
+        }
+        
+        // If center is occupied, search in a spiral pattern
+        const maxAttempts = 100;
+        let attempts = 0;
+        let radius = 1;
+        
+        while (attempts < maxAttempts) {
+            // Check positions in a square pattern around the center
+            for (let dx = -radius; dx <= radius; dx++) {
+                for (let dy = -radius; dy <= radius; dy++) {
+                    // Only check the perimeter of the square
+                    if (Math.abs(dx) === radius || Math.abs(dy) === radius) {
+                        const testX = centerX + dx * gridSize;
+                        const testY = centerY + dy * gridSize;
+                        
+                        // Check if position is within bounds
+                        if (testX >= gridSize / 2 && testX < gameWidth - gridSize / 2 &&
+                            testY >= gridSize / 2 && testY < gameHeight - gridSize / 2) {
+                            
+                            // Check if position and body segments don't overlap with obstacles
+                            if (!this.isPositionOccupied(testX, testY) &&
+                                !this.isPositionOccupied(testX - gridSize, testY) &&
+                                !this.isPositionOccupied(testX - gridSize * 2, testY)) {
+                                console.log(`Found valid snake position at (${testX}, ${testY}) after ${attempts} attempts`);
+                                return { x: testX, y: testY };
+                            }
+                        }
+                        attempts++;
+                    }
+                }
+            }
+            radius++;
+        }
+        
+        // If no valid position found, return center (fallback)
+        console.warn('No valid snake position found, using center as fallback');
+        return { x: centerX, y: centerY };
+    }
+
+    private isPositionOccupied(x: number, y: number): boolean {
+        if (!this.obstacleManager) return false;
+        
+        const obstacles = this.obstacleManager.getObstacles();
+        return obstacles.some((obstacle: any) => 
+            obstacle.x === x && obstacle.y === y
+        );
     }
 
     private createGrid(): void {
@@ -156,17 +218,19 @@ export class SnakeScene extends Phaser.Scene {
     }
 
     private resetSnake(keepLength: boolean = false): void {
-        // Reset snake to center position
+        // Find a valid spawn position that doesn't overlap with obstacles
         const centerX = Math.floor(this.gameWidth / this.gridSize / 2) * this.gridSize + this.gridSize / 2;
         const centerY = Math.floor(this.gameHeight / this.gridSize / 2) * this.gridSize + this.gridSize / 2;
         
+        const validPosition = this.findValidSnakePosition(centerX, centerY);
+        
         // Reset head position
-        this.snake.head.setPosition(centerX, centerY);
+        this.snake.head.setPosition(validPosition.x, validPosition.y);
         
         // Reset body segments
         for (let i = 1; i < this.snake.body.length; i++) {
-            const segmentX = centerX - i * this.gridSize;
-            const segmentY = centerY;
+            const segmentX = validPosition.x - i * this.gridSize;
+            const segmentY = validPosition.y;
             this.snake.body[i].setPosition(segmentX, segmentY);
         }
         
@@ -636,6 +700,11 @@ export class SnakeScene extends Phaser.Scene {
                 y: drop.sprite.y,
                 value: drop.value
             }));
+            
+            // Save obstacles for revival
+            if (this.obstacleManager) {
+                this.obstacleManager.saveObstacles();
+            }
             
             // Switch to game over scene after a short delay
             this.time.delayedCall(1000, () => {

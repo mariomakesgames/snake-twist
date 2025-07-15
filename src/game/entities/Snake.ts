@@ -27,9 +27,12 @@ export class Snake {
         // Detect mobile device
         this.isMobile = this.detectMobileDevice();
         
+        // Find a valid spawn position that doesn't overlap with obstacles
+        const validPosition = this.findValidSpawnPosition(x, y);
+        
         // Create snake head using graphics - align to grid
         const gridSize = (scene as any).gridSize || 20; // 使用统一的网格大小
-        this.head = scene.add.rectangle(x, y, gridSize - 2, gridSize - 2, 0x00ff00);
+        this.head = scene.add.rectangle(validPosition.x, validPosition.y, gridSize - 2, gridSize - 2, 0x00ff00);
         scene.physics.add.existing(this.head);
         const headBody = this.head.body as any;
         headBody.setCollideWorldBounds(true);
@@ -39,8 +42,8 @@ export class Snake {
         
         // Create initial body segments - align to grid
         for (let i = 1; i < 3; i++) {
-            const segmentX = x - i * gridSize;
-            const segmentY = y;
+            const segmentX = validPosition.x - i * gridSize;
+            const segmentY = validPosition.y;
             const segment = scene.add.rectangle(segmentX, segmentY, gridSize - 2, gridSize - 2, 0x00cc00);
             scene.physics.add.existing(segment);
             this.body.push(segment);
@@ -57,6 +60,64 @@ export class Snake {
         return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
                ('ontouchstart' in window) ||
                (navigator.maxTouchPoints > 0);
+    }
+
+    private findValidSpawnPosition(centerX: number, centerY: number): { x: number, y: number } {
+        const gridSize = (this.scene as any).gridSize || 20;
+        const gameWidth = this.scene.scale.width;
+        const gameHeight = this.scene.scale.height;
+        
+        // Try the center position first
+        if (!this.isPositionOccupied(centerX, centerY)) {
+            return { x: centerX, y: centerY };
+        }
+        
+        // If center is occupied, search in a spiral pattern
+        const maxAttempts = 100;
+        let attempts = 0;
+        let radius = 1;
+        
+        while (attempts < maxAttempts) {
+            // Check positions in a square pattern around the center
+            for (let dx = -radius; dx <= radius; dx++) {
+                for (let dy = -radius; dy <= radius; dy++) {
+                    // Only check the perimeter of the square
+                    if (Math.abs(dx) === radius || Math.abs(dy) === radius) {
+                        const testX = centerX + dx * gridSize;
+                        const testY = centerY + dy * gridSize;
+                        
+                        // Check if position is within bounds
+                        if (testX >= gridSize / 2 && testX < gameWidth - gridSize / 2 &&
+                            testY >= gridSize / 2 && testY < gameHeight - gridSize / 2) {
+                            
+                            // Check if position and body segments don't overlap with obstacles
+                            if (!this.isPositionOccupied(testX, testY) &&
+                                !this.isPositionOccupied(testX - gridSize, testY) &&
+                                !this.isPositionOccupied(testX - gridSize * 2, testY)) {
+                                console.log(`Found valid spawn position at (${testX}, ${testY}) after ${attempts} attempts`);
+                                return { x: testX, y: testY };
+                            }
+                        }
+                        attempts++;
+                    }
+                }
+            }
+            radius++;
+        }
+        
+        // If no valid position found, return center (fallback)
+        console.warn('No valid spawn position found, using center as fallback');
+        return { x: centerX, y: centerY };
+    }
+
+    private isPositionOccupied(x: number, y: number): boolean {
+        const obstacleManager = (this.scene as any).obstacleManager;
+        if (!obstacleManager) return false;
+        
+        const obstacles = obstacleManager.getObstacles();
+        return obstacles.some((obstacle: any) => 
+            obstacle.x === x && obstacle.y === y
+        );
     }
 
     private setupInput(): void {
@@ -209,6 +270,13 @@ export class Snake {
         if (newHeadX < 0 || newHeadX >= this.scene.scale.width || 
             newHeadY < 0 || newHeadY >= this.scene.scale.height) {
             console.log('Wall collision detected!');
+            (this.scene as any).gameOver();
+            return;
+        }
+        
+        // Check for obstacle collision
+        if (this.isPositionOccupied(newHeadX, newHeadY)) {
+            console.log('Obstacle collision detected!');
             (this.scene as any).gameOver();
             return;
         }

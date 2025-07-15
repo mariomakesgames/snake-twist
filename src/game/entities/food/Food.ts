@@ -27,7 +27,7 @@ export class Food {
             x = gridX * gridSize + gridSize / 2;
             y = gridY * gridSize + gridSize / 2;
             attempts++;
-        } while (this.isOnSnake(x, y) && attempts < 100);
+        } while ((this.isOnSnake(x, y) || this.isOnObstacle(x, y)) && attempts < 100);
         
         this.sprite.setPosition(x, y);
         console.log('Food repositioned to:', x, y);
@@ -36,6 +36,16 @@ export class Food {
     protected isOnSnake(x: number, y: number): boolean {
         return (this.scene as any).snake.body.some((segment: any) => 
             segment.x === x && segment.y === y
+        );
+    }
+
+    protected isOnObstacle(x: number, y: number): boolean {
+        const obstacleManager = (this.scene as any).obstacleManager;
+        if (!obstacleManager) return false;
+        
+        const obstacles = obstacleManager.getObstacles();
+        return obstacles.some((obstacle: any) => 
+            obstacle.x === x && obstacle.y === y
         );
     }
 } 
