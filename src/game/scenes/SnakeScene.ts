@@ -387,9 +387,7 @@ export class SnakeScene extends Phaser.Scene {
         if (gameState.isPaused !== paused) {
             gameState.isPaused = paused;
             
-            // Update pause button text
-            // const text = this.pauseButton.getAt(1) as Phaser.GameObjects.Text; // This line is removed
-            // text.setText(gameState.isPaused ? 'RESUME' : 'PAUSE'); // This line is removed
+
             
             // Add pause overlay effect
             if (gameState.isPaused) {
@@ -804,18 +802,7 @@ export class SnakeScene extends Phaser.Scene {
             // Create particle effect for game over
             this.createGameOverParticles();
             
-            // Hide pause button with animation
-            // this.tweens.add({ // This line is removed
-            //     targets: this.pauseButton, // This line is removed
-            //     alpha: 0, // This line is removed
-            //     scaleX: 0.8, // This line is removed
-            //     scaleY: 0.8, // This line is removed
-            //     duration: 300, // This line is removed
-            //     ease: 'Power2', // This line is removed
-            //     onComplete: () => { // This line is removed
-            //         this.pauseButton.setVisible(false); // This line is removed
-            //     } // This line is removed
-            // }); // This line is removed
+
             
             this.isGameStarted = false;
             
@@ -1176,15 +1163,7 @@ export class SnakeScene extends Phaser.Scene {
         // Start portal manager
         this.portalManager.start();
         
-        // Show pause button with animation
-        // this.tweens.add({ // This line is removed
-        //     targets: this.pauseButton, // This line is removed
-        //     alpha: 1, // This line is removed
-        //     scaleX: 1, // This line is removed
-        //     scaleY: 1, // This line is removed
-        //     duration: 300, // This line is removed
-        //     ease: 'Power2' // This line is removed
-        // }); // This line is removed
+
         
         this.isGameStarted = true;
         

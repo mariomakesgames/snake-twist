@@ -118,11 +118,7 @@ export class Portal {
         if (this.rotationTween) {
             this.rotationTween.stop();
         }
-        // 传送时不降低透明度，保持正常显示
-        // this.sprite.setAlpha(0.3); // 移除透明度降低
-        // if (this.glowEffect) {
-        //     this.glowEffect.setAlpha(0.1); // 移除发光效果透明度降低
-        // }
+
     }
 
     public activate(): void {

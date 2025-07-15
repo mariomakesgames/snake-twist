@@ -498,7 +498,7 @@ export class GameOverScene extends Phaser.Scene {
             });
         }
         
-        // 移除flash效果，只保留粒子动画
+
     }
 
     private revivePlayer(): void {
