@@ -616,6 +616,15 @@ export class GameOverScene extends Phaser.Scene {
     private restartGame(): void {
         console.log('Restarting game...');
         
+        // Reset game state for restart
+        const gameState = (window as any).gameState;
+        if (gameState) {
+            gameState.score = 0; // Reset score for restart
+            gameState.isGameOver = false;
+            gameState.isPaused = false;
+            gameState.isReviving = false; // Not reviving, this is a restart
+        }
+        
         // Add exit animation - include button texts and revive button
         this.tweens.add({
             targets: [this.titleText, this.scoreText, this.highScoreText, this.restartButton, this.menuButton, this.reviveButton, this.reviveButtonText],
@@ -633,6 +642,15 @@ export class GameOverScene extends Phaser.Scene {
 
     private goToMenu(): void {
         console.log('Going to menu...');
+        
+        // Reset game state for menu
+        const gameState = (window as any).gameState;
+        if (gameState) {
+            gameState.score = 0; // Reset score when going to menu
+            gameState.isGameOver = false;
+            gameState.isPaused = false;
+            gameState.isReviving = false;
+        }
         
         // Add exit animation - include button texts and revive button
         this.tweens.add({

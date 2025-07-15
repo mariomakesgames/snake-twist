@@ -21,10 +21,19 @@ export class ObstacleManager {
             new EShapePattern(scene)     // E型模式
         ];
         
-        // 在构造函数中随机选择一种形状，整个游戏过程都使用这种形状
-        const randomIndex = Math.floor(Math.random() * this.patterns.length);
-        this.selectedPattern = this.patterns[randomIndex];
-        console.log(`🎲 游戏开始！随机选择了: ${this.selectedPattern.getName()}`);
+        // 检查是否有保存的模式信息（复活时）
+        const gameState = (window as any).gameState;
+        if (gameState && gameState.isReviving && gameState.savedObstaclePattern) {
+            // 使用保存的模式
+            const savedPatternName = gameState.savedObstaclePattern;
+            this.selectedPattern = this.patterns.find(pattern => pattern.getName() === savedPatternName) || this.patterns[0];
+            console.log(`🔄 Revival mode - using saved pattern: ${this.selectedPattern.getName()}`);
+        } else {
+            // 随机选择一种形状，整个游戏过程都使用这种形状
+            const randomIndex = Math.floor(Math.random() * this.patterns.length);
+            this.selectedPattern = this.patterns[randomIndex];
+            console.log(`🎲 游戏开始！随机选择了: ${this.selectedPattern.getName()}`);
+        }
     }
 
     public generateObstacles(): void {
@@ -100,9 +109,10 @@ export class ObstacleManager {
         const gameState = (window as any).gameState;
         if (gameState) {
             gameState.savedObstaclePositions = this.savedObstaclePositions;
+            gameState.savedObstaclePattern = this.selectedPattern.getName();
         }
         
-        console.log(`Saved ${this.savedObstaclePositions.length} obstacle positions`);
+        console.log(`Saved ${this.savedObstaclePositions.length} obstacle positions and pattern: ${this.selectedPattern.getName()}`);
     }
 
     public restoreObstacles(): void {
@@ -114,6 +124,7 @@ export class ObstacleManager {
             positionsToRestore = gameState.savedObstaclePositions;
             // Clear the saved data after restoring
             gameState.savedObstaclePositions = null;
+            gameState.savedObstaclePattern = null;
         }
         
         if (positionsToRestore.length === 0) {

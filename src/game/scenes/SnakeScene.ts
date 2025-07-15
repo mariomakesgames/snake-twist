@@ -9,6 +9,7 @@ import { ScoreIndicator } from '../entities/ScoreIndicator';
 import { SegmentDrop } from '../entities/SegmentDrop';
 import { Snake } from '../entities/Snake';
 import { EventBus } from '../EventBus';
+import { GameSettingsManager } from '../GameSettings';
 import { FoodTutorialManager } from '../tutorial/FoodTutorialManager';
 
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -41,12 +42,16 @@ export class SnakeScene extends Phaser.Scene {
     // Segment Drops
     private segmentDrops: SegmentDrop[] = [];
 
+    // Settings Manager
+    private settingsManager: GameSettingsManager;
+
     constructor() {
         super({ key: 'SnakeScene' });
         this.gameSpeed = 350;
         this.gridSize = 20;
         this.gameWidth = 600;
         this.gameHeight = 800;
+        this.settingsManager = GameSettingsManager.getInstance();
     }
 
     public preload(): void {
@@ -69,11 +74,23 @@ export class SnakeScene extends Phaser.Scene {
         // Create portal manager
         this.portalManager = new PortalManager(this);
         
-        // Create obstacle manager and generate obstacles FIRST
+        // Create obstacle manager and handle obstacles based on revival state
         this.obstacleManager = new ObstacleManager(this);
         
-        // 调试模式：强制重新生成障碍物，忽略保存的数据
-        this.obstacleManager.generateObstacles();
+        // Only handle obstacles if obstacle mode is enabled
+        if (this.settingsManager.isObstacleModeEnabled()) {
+            if (gameState && gameState.isReviving && gameState.savedObstaclePositions) {
+                // Restore saved obstacles during revival
+                console.log('🔄 Revival mode - restoring saved obstacles');
+                this.obstacleManager.restoreObstacles();
+            } else {
+                // Generate new obstacles for new game
+                console.log('🎯 Obstacle mode enabled - generating new obstacles');
+                this.obstacleManager.generateObstacles();
+            }
+        } else {
+            console.log('⚪ Obstacle mode disabled - no obstacles generated');
+        }
         
         // Initialize snake at grid center (after obstacles)
         const centerX = Math.floor(this.gameWidth / this.gridSize / 2) * this.gridSize + this.gridSize / 2;
@@ -200,6 +217,52 @@ export class SnakeScene extends Phaser.Scene {
         );
     }
 
+    private findValidSegmentDropPosition(centerX: number, centerY: number): { x: number, y: number } {
+        const gridSize = this.gridSize;
+        const gameWidth = this.gameWidth;
+        const gameHeight = this.gameHeight;
+        
+        // Try the center position first
+        if (!this.isPositionOccupied(centerX, centerY)) {
+            return { x: centerX, y: centerY };
+        }
+        
+        // If center is occupied, search in a spiral pattern
+        const maxAttempts = 50;
+        let attempts = 0;
+        let radius = 1;
+        
+        while (attempts < maxAttempts) {
+            // Check positions in a square pattern around the center
+            for (let dx = -radius; dx <= radius; dx++) {
+                for (let dy = -radius; dy <= radius; dy++) {
+                    // Only check the perimeter of the square
+                    if (Math.abs(dx) === radius || Math.abs(dy) === radius) {
+                        const testX = centerX + dx * gridSize;
+                        const testY = centerY + dy * gridSize;
+                        
+                        // Check if position is within bounds
+                        if (testX >= gridSize / 2 && testX < gameWidth - gridSize / 2 &&
+                            testY >= gridSize / 2 && testY < gameHeight - gridSize / 2) {
+                            
+                            // Check if position doesn't overlap with obstacles
+                            if (!this.isPositionOccupied(testX, testY)) {
+                                console.log(`Found valid segment drop position at (${testX}, ${testY}) after ${attempts} attempts`);
+                                return { x: testX, y: testY };
+                            }
+                        }
+                        attempts++;
+                    }
+                }
+            }
+            radius++;
+        }
+        
+        // If no valid position found, return center (fallback)
+        console.warn('No valid segment drop position found, using center as fallback');
+        return { x: centerX, y: centerY };
+    }
+
     private createGrid(): void {
         const graphics = this.add.graphics();
         graphics.lineStyle(1, 0x333333, 0.3);
@@ -255,13 +318,15 @@ export class SnakeScene extends Phaser.Scene {
         console.log('Auto starting game...');
         const gameState = (window as any).gameState;
         
-        // Reset game state
+        // Reset game state only if not reviving
         console.log('Resetting game state');
-        gameState.score = 0;
+        if (!gameState.isReviving) {
+            gameState.score = 0;
+            this.gameSpeed = 350; // Only reset speed for new games
+        }
         gameState.isPaused = false;
         gameState.isGameOver = false;
         gameState.isTeleporting = false;
-        this.gameSpeed = 350;
         (window as any).updateUI();
         
         // Reset snake position and state
@@ -542,7 +607,9 @@ export class SnakeScene extends Phaser.Scene {
         this.food.reposition();
         
         const gameState = (window as any).gameState;
-        const scoreGain = 10;
+        const baseScoreGain = 10; // 基础得分10分
+        const scoreGain = Math.round(baseScoreGain * this.settingsManager.getScoreMultiplier());
+        console.log(`Base score: ${baseScoreGain}, Multiplier: ${this.settingsManager.getScoreMultiplier()}, Final score: ${scoreGain}`);
         gameState.score += scoreGain;
         if (gameState.score > gameState.highScore) {
             gameState.highScore = gameState.score;
@@ -571,7 +638,8 @@ export class SnakeScene extends Phaser.Scene {
         this.foodTutorialManager.showTutorial('growth-boost');
         
         const gameState = (window as any).gameState;
-        const scoreGain = 50;
+        const baseScoreGain = 50;
+        const scoreGain = Math.round(baseScoreGain * this.settingsManager.getScoreMultiplier());
         gameState.score += scoreGain; // Higher score for growth boost food
         if (gameState.score > gameState.highScore) {
             gameState.highScore = gameState.score;
@@ -615,7 +683,8 @@ export class SnakeScene extends Phaser.Scene {
         this.foodTutorialManager.showTutorial('speed-boost');
         
         const gameState = (window as any).gameState;
-        const scoreGain = 10; // Same as regular food since it only grows by 1
+        const baseScoreGain = 10; // Same as regular food since it only grows by 1
+        const scoreGain = Math.round(baseScoreGain * this.settingsManager.getScoreMultiplier());
         gameState.score += scoreGain;
         if (gameState.score > gameState.highScore) {
             gameState.highScore = gameState.score;
@@ -644,7 +713,8 @@ export class SnakeScene extends Phaser.Scene {
         this.foodTutorialManager.showTutorial('slow-food');
         
         const gameState = (window as any).gameState;
-        const scoreGain = 10; // Same as regular food since it grows by 1
+        const baseScoreGain = 10; // Same as regular food since it grows by 1
+        const scoreGain = Math.round(baseScoreGain * this.settingsManager.getScoreMultiplier());
         gameState.score += scoreGain;
         if (gameState.score > gameState.highScore) {
             gameState.highScore = gameState.score;
@@ -766,7 +836,10 @@ export class SnakeScene extends Phaser.Scene {
             const clampedX = Math.max(this.gridSize / 2, Math.min(this.gameWidth - this.gridSize / 2, gridX));
             const clampedY = Math.max(this.gridSize / 2, Math.min(this.gameHeight - this.gridSize / 2, gridY));
             
-            const segmentDrop = new SegmentDrop(this, clampedX, clampedY, 1);
+            // Find a valid position that doesn't overlap with obstacles
+            const validPosition = this.findValidSegmentDropPosition(clampedX, clampedY);
+            
+            const segmentDrop = new SegmentDrop(this, validPosition.x, validPosition.y, 1);
             this.segmentDrops.push(segmentDrop);
             
             // Add collision detection for this segment drop
@@ -797,6 +870,9 @@ export class SnakeScene extends Phaser.Scene {
             const segmentDrop = new SegmentDrop(this, dropData.x, dropData.y, dropData.value);
             this.segmentDrops.push(segmentDrop);
         });
+        
+        // Setup collision detection for the recreated segment drops
+        this.setupSegmentDropCollisions();
         
         // Clear the saved data
         gameState.segmentDropsData = null;
@@ -1048,9 +1124,6 @@ export class SnakeScene extends Phaser.Scene {
         
         // Reset snake position and state but keep score
         this.resetSnake();
-        
-        // Re-setup collision detection for segment drops with the new snake head
-        this.setupSegmentDropCollisions();
         
         // Restore snake length if saved
         if (gameState.savedSnakeLength && gameState.savedSnakeLength > 3) {
