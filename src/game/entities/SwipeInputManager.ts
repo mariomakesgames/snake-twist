@@ -81,32 +81,28 @@ export class SwipeInputManager {
     }
 
     private setupKeyboardInput(): void {
-        // 保留原有的键盘输入作为备用
+        // WASD keyboard input
         this.scene.input.keyboard?.on('keydown', (event: any) => {
             if (!this.snake.isMoving) return;
             
             const key = event.code;
             
             switch (key) {
-                case 'ArrowUp':
                 case 'KeyW':
                     if (this.snake.direction.y === 0) {
                         this.snake.nextDirection.set(0, -1);
                     }
                     break;
-                case 'ArrowDown':
                 case 'KeyS':
                     if (this.snake.direction.y === 0) {
                         this.snake.nextDirection.set(0, 1);
                     }
                     break;
-                case 'ArrowLeft':
                 case 'KeyA':
                     if (this.snake.direction.x === 0) {
                         this.snake.nextDirection.set(-1, 0);
                     }
                     break;
-                case 'ArrowRight':
                 case 'KeyD':
                     if (this.snake.direction.x === 0) {
                         this.snake.nextDirection.set(1, 0);

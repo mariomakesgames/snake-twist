@@ -121,29 +121,29 @@ export class Snake {
     }
 
     private setupInput(): void {
-        // Keyboard input (desktop)
+        // Keyboard input (desktop) - WASD controls
         this.scene.input.keyboard?.on('keydown', (event: any) => {
             if (!this.isMoving) return;
             
             const key = event.code;
             
             switch (key) {
-                case 'ArrowUp':
+                case 'KeyW':
                     if (this.direction.y === 0) { // 就排除了180度的turn的情况
                         this.nextDirection.set(0, -1);
                     }
                     break;
-                case 'ArrowDown':
+                case 'KeyS':
                     if (this.direction.y === 0) {
                         this.nextDirection.set(0, 1);
                     }
                     break;
-                case 'ArrowLeft':
+                case 'KeyA':
                     if (this.direction.x === 0) {
                         this.nextDirection.set(-1, 0);
                     }
                     break;
-                case 'ArrowRight':
+                case 'KeyD':
                     if (this.direction.x === 0) {
                         this.nextDirection.set(1, 0);
                     }
