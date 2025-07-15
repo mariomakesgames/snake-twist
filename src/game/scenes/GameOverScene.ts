@@ -32,11 +32,29 @@ export class GameOverScene extends Phaser.Scene {
         const overlay = this.add.rectangle(0, 0, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.8);
         overlay.setOrigin(0, 0);
 
-        // Create game over panel - make it taller to accommodate the new button
+        // Create game over panel with rounded corners - make it taller to accommodate the new button
         const panelWidth = 500;
         const panelHeight = 480; // Increased height
-        const panel = this.add.rectangle(centerX, centerY, panelWidth, panelHeight, 0x333333);
-        panel.setStrokeStyle(4, 0xFF6B6B);
+        const borderRadius = 25;
+        
+        // Create panel background with rounded corners
+        const panelBg = this.add.graphics();
+        panelBg.fillStyle(0x333333, 1);
+        panelBg.fillRoundedRect(
+            centerX - panelWidth / 2,
+            centerY - panelHeight / 2,
+            panelWidth,
+            panelHeight,
+            borderRadius
+        );
+        panelBg.lineStyle(4, 0xFF6B6B, 1);
+        panelBg.strokeRoundedRect(
+            centerX - panelWidth / 2,
+            centerY - panelHeight / 2,
+            panelWidth,
+            panelHeight,
+            borderRadius
+        );
 
         // Create title
         this.titleText = this.add.text(centerX, centerY - 140, 'GAME OVER!', {
@@ -70,6 +88,9 @@ export class GameOverScene extends Phaser.Scene {
         this.createRestartButton(centerX - 120, centerY + 100); // Left button
         this.createMenuButton(centerX + 120, centerY + 100); // Right button
 
+        // Add panel background to scene
+        this.add.existing(panelBg);
+        
         // Add entrance animations
         this.addEntranceAnimations();
 
@@ -383,13 +404,13 @@ export class GameOverScene extends Phaser.Scene {
     }
 
     private addEntranceAnimations(): void {
-        // Panel animation - find the panel rectangle
-        const panel = this.children.getByName('panel') || this.children.getAt(1);
-        if (panel && panel instanceof Phaser.GameObjects.Rectangle) {
-            panel.setScale(0.5);
-            panel.setAlpha(0);
+        // Panel animation - find the panel background graphics
+        const panelBg = this.children.getAt(1) as Phaser.GameObjects.Graphics;
+        if (panelBg && panelBg instanceof Phaser.GameObjects.Graphics) {
+            panelBg.setScale(0.5);
+            panelBg.setAlpha(0);
             this.tweens.add({
-                targets: panel,
+                targets: panelBg,
                 scaleX: 1,
                 scaleY: 1,
                 alpha: 1,

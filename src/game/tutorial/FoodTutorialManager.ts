@@ -169,17 +169,29 @@ export class FoodTutorialManager {
             0.7
         );
 
-        // Create tutorial card
+        // Create tutorial card with rounded corners
         const cardWidth = 400;
         const cardHeight = 300;
-        const card = this.scene.add.rectangle(
-            gameWidth / 2,
-            gameHeight / 2,
+        const borderRadius = 20;
+        
+        // Create card background with rounded corners
+        const cardBg = this.scene.add.graphics();
+        cardBg.fillStyle(0x333333, 1);
+        cardBg.fillRoundedRect(
+            gameWidth / 2 - cardWidth / 2,
+            gameHeight / 2 - cardHeight / 2,
             cardWidth,
             cardHeight,
-            0x333333
+            borderRadius
         );
-        card.setStrokeStyle(3, tutorial.color);
+        cardBg.lineStyle(3, tutorial.color, 1);
+        cardBg.strokeRoundedRect(
+            gameWidth / 2 - cardWidth / 2,
+            gameHeight / 2 - cardHeight / 2,
+            cardWidth,
+            cardHeight,
+            borderRadius
+        );
 
         // Create icon
         const icon = this.scene.add.text(
@@ -231,17 +243,29 @@ export class FoodTutorialManager {
             }
         ).setOrigin(0.5);
 
-        // Create continue button
+        // Create continue button with rounded corners
         const buttonWidth = 120;
         const buttonHeight = 40;
-        const button = this.scene.add.rectangle(
-            gameWidth / 2,
-            gameHeight / 2 + 100,
+        const buttonRadius = 20;
+        
+        // Create button background with rounded corners
+        const buttonBg = this.scene.add.graphics();
+        buttonBg.fillStyle(tutorial.color, 1);
+        buttonBg.fillRoundedRect(
+            gameWidth / 2 - buttonWidth / 2,
+            gameHeight / 2 + 100 - buttonHeight / 2,
             buttonWidth,
             buttonHeight,
-            tutorial.color
+            buttonRadius
         );
-        button.setStrokeStyle(2, 0xffffff);
+        buttonBg.lineStyle(2, 0xffffff, 1);
+        buttonBg.strokeRoundedRect(
+            gameWidth / 2 - buttonWidth / 2,
+            gameHeight / 2 + 100 - buttonHeight / 2,
+            buttonWidth,
+            buttonHeight,
+            buttonRadius
+        );
 
         const buttonText = this.scene.add.text(
             gameWidth / 2,
@@ -256,10 +280,10 @@ export class FoodTutorialManager {
         ).setOrigin(0.5);
 
         // Make button interactive
-        button.setInteractive();
-        button.on('pointerover', () => {
+        buttonBg.setInteractive();
+        buttonBg.on('pointerover', () => {
             this.scene.tweens.add({
-                targets: button,
+                targets: buttonBg,
                 scaleX: 1.1,
                 scaleY: 1.1,
                 duration: 150,
@@ -267,9 +291,9 @@ export class FoodTutorialManager {
             });
         });
 
-        button.on('pointerout', () => {
+        buttonBg.on('pointerout', () => {
             this.scene.tweens.add({
-                targets: button,
+                targets: buttonBg,
                 scaleX: 1,
                 scaleY: 1,
                 duration: 150,
@@ -277,9 +301,9 @@ export class FoodTutorialManager {
             });
         });
 
-        button.on('pointerdown', () => {
+        buttonBg.on('pointerdown', () => {
             this.scene.tweens.add({
-                targets: button,
+                targets: buttonBg,
                 scaleX: 0.95,
                 scaleY: 0.95,
                 duration: 100,
@@ -288,7 +312,7 @@ export class FoodTutorialManager {
             });
         });
 
-        button.on('pointerup', () => {
+        buttonBg.on('pointerup', () => {
             // 如果是单个教程弹窗（currentTutorialIndex为0），直接关闭
             // 如果是批量教程弹窗（currentTutorialIndex > 0），显示下一个
             if (this.currentTutorialIndex === 0) {
@@ -305,12 +329,12 @@ export class FoodTutorialManager {
         // Create container
         this.tutorialOverlay = this.scene.add.container(0, 0, [
             background,
-            card,
+            cardBg,
             icon,
             title,
             description,
             effect,
-            button,
+            buttonBg,
             buttonText
         ]);
 

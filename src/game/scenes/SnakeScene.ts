@@ -255,11 +255,11 @@ export class SnakeScene extends Phaser.Scene {
         this.pauseOverlay.fillGradientStyle(0x000000, 0x000000, 0x1a1a1a, 0x1a1a1a, 0.7, 0.7, 0.9, 0.9);
         this.pauseOverlay.fillRect(0, 0, this.gameWidth, this.gameHeight);
         
-        // Create pause icon
+        // Create pause icon with rounded corners
         const pauseIcon = this.add.graphics();
         pauseIcon.fillStyle(0xffffff, 0.9);
-        pauseIcon.fillRect(-15, -30, 8, 60);
-        pauseIcon.fillRect(7, -30, 8, 60);
+        pauseIcon.fillRoundedRect(-15, -30, 8, 60, 4);
+        pauseIcon.fillRoundedRect(7, -30, 8, 60, 4);
         
         // Create pause text with better styling
         this.pauseText = this.add.text(
@@ -805,58 +805,7 @@ export class SnakeScene extends Phaser.Scene {
             });
         }
         
-        // Create "GAME OVER" text with dramatic effect
-        const gameOverText = this.add.text(
-            this.gameWidth / 2,
-            this.gameHeight / 2 - 50,
-            'GAME OVER',
-            {
-                fontSize: '48px',
-                color: '#FF5722',
-                fontFamily: 'Arial, sans-serif',
-                fontStyle: 'bold',
-                stroke: '#D32F2F',
-                strokeThickness: 4,
-                shadow: {
-                    offsetX: 3,
-                    offsetY: 3,
-                    color: '#000000',
-                    blur: 6,
-                    fill: true
-                }
-            }
-        ).setOrigin(0.5);
-        
-        gameOverText.setAlpha(0);
-        gameOverText.setScale(0.3);
-        
-        this.tweens.add({
-            targets: gameOverText,
-            alpha: 1,
-            scaleX: 1.2,
-            scaleY: 1.2,
-            duration: 800,
-            ease: 'Back.easeOut',
-            onComplete: () => {
-                this.tweens.add({
-                    targets: gameOverText,
-                    scaleX: 1,
-                    scaleY: 1,
-                    duration: 200,
-                    ease: 'Power2'
-                });
-            }
-        });
-        
-        // Add pulsing effect to game over text
-        this.tweens.add({
-            targets: gameOverText,
-            alpha: 0.7,
-            duration: 1000,
-            ease: 'Sine.easeInOut',
-            yoyo: true,
-            repeat: -1
-        });
+        // Game over text removed - no longer displaying "GAME OVER" text
     }
 
     public update(time: number): void {
