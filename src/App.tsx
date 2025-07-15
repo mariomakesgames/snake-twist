@@ -77,7 +77,7 @@ function App()
                         Score: <span id="score">{score}</span>
                     </div>
                     <div className="score-item">
-                        High Score: <span id="highScore">{highScore}</span>
+                        High: <span id="highScore">{highScore}</span>
                     </div>
                 </div>
             </div>

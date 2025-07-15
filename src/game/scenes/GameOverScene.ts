@@ -68,7 +68,7 @@ export class GameOverScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // Create score text
-        this.scoreText = this.add.text(centerX, centerY - 80, `Final Score: ${this.finalScore}`, {
+        this.scoreText = this.add.text(centerX, centerY - 80, `Final: ${this.finalScore}`, {
             fontSize: '32px',
             color: '#ffffff',
             fontFamily: 'Arial',
@@ -80,7 +80,7 @@ export class GameOverScene extends Phaser.Scene {
         const highScore = gameState ? gameState.highScore : 0;
         
         // Create high score text
-        this.highScoreText = this.add.text(centerX, centerY - 40, `High Score: ${highScore}`, {
+        this.highScoreText = this.add.text(centerX, centerY - 40, `High: ${highScore}`, {
             fontSize: '24px',
             color: '#FFD700',
             fontFamily: 'Arial'

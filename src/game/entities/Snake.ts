@@ -139,9 +139,9 @@ export class Snake {
     public update(time: number): boolean {
         if (!this.isMoving || time < this.moveTime) {
             if (!this.isMoving) {
-                console.log('Snake not moving, isMoving:', this.isMoving);
+                // console.log('Snake not moving, isMoving:', this.isMoving);
             } else if (time < this.moveTime) {
-                console.log('Waiting for next move, time:', time, 'moveTime:', this.moveTime);
+                // console.log('Waiting for next move, time:', time, 'moveTime:', this.moveTime);
             }
             return false;
         }
@@ -167,12 +167,12 @@ export class Snake {
         const newHeadX = this.head.x + this.direction.x * gridSize;
         const newHeadY = this.head.y + this.direction.y * gridSize;
         
-        console.log('Moving snake:', {
-            currentPos: { x: this.head.x, y: this.head.y },
-            direction: { x: this.direction.x, y: this.direction.y },
-            newPos: { x: newHeadX, y: newHeadY },
-            gridSize: gridSize
-        });
+        // console.log('Moving snake:', {
+        //     currentPos: { x: this.head.x, y: this.head.y },
+        //     direction: { x: this.direction.x, y: this.direction.y },
+        //     newPos: { x: newHeadX, y: newHeadY },
+        //     gridSize: gridSize
+        // });
         
         // Check for portal teleportation
         const portalManager = (this.scene as any).portalManager;
