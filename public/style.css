@@ -53,6 +53,9 @@ h1 {
     padding: 10px 20px;
     border-radius: 25px;
     backdrop-filter: blur(5px);
+    /* iOS specific fix for background rendering issues */
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Canvas样式已移至canvas-fix.css */
@@ -234,6 +237,14 @@ h1 {
         min-height: 44px;
         padding: 15px 20px;
     }
+    
+    /* iOS specific fixes for score display */
+    .score-item {
+        background: rgba(0, 0, 0, 0.3) !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        -webkit-backdrop-filter: blur(5px);
+        backdrop-filter: blur(5px);
+    }
 }
 
 /* Prevent text selection on mobile */
@@ -245,5 +256,21 @@ h1 {
         -moz-user-select: none;
         -ms-user-select: none;
         user-select: none;
+    }
+}
+
+/* iOS specific fixes */
+@supports (-webkit-touch-callout: none) {
+    .score-item {
+        background: rgba(0, 0, 0, 0.4) !important;
+        border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        -webkit-backdrop-filter: blur(5px);
+        backdrop-filter: blur(5px);
+        color: white !important;
+    }
+    
+    .score-item span {
+        color: white !important;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
     }
 }
