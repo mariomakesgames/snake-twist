@@ -25,6 +25,9 @@ export class GameOverScene extends Phaser.Scene {
     public create(): void {
         console.log('GameOverScene create() called');
         
+        // Disable any mobile input managers that might interfere with button clicks
+        this.disableMobileInputInterference();
+        
         const centerX = this.cameras.main.centerX;
         const centerY = this.cameras.main.centerY;
 
@@ -101,6 +104,27 @@ export class GameOverScene extends Phaser.Scene {
         EventBus.emit('current-scene-ready', this);
     }
 
+    private disableMobileInputInterference(): void {
+        // Disable any global touch/mouse event listeners that might interfere with button clicks
+        console.log('Disabling mobile input interference for GameOverScene');
+        
+        // Check if there are any global event listeners that might interfere
+        const gameState = (window as any).gameState;
+        if (gameState && gameState.currentScene && gameState.currentScene.snake) {
+            const snake = gameState.currentScene.snake;
+            if (snake.mobileInputManager) {
+                console.log('Disabling mobile input manager');
+                snake.mobileInputManager.disable();
+            }
+        }
+        
+        // Also disable any global document event listeners that might interfere
+        // This is a safety measure to ensure button clicks work properly
+        document.addEventListener('click', (e) => {
+            console.log('Document click event:', e.target);
+        }, { once: true });
+    }
+
     private createReviveButton(x: number, y: number): void {
         const buttonWidth = 240;
         const buttonHeight = 60;
@@ -129,29 +153,45 @@ export class GameOverScene extends Phaser.Scene {
         this.reviveButton = this.add.container(x, y, [background, text]);
         this.reviveButton.setActive(true).setVisible(true);
 
-        // Make the background interactive
+        // Make the background interactive with larger hit area
         background.setInteractive(new Phaser.Geom.Rectangle(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
 
-        // Hover effects removed
+        // Add click handler with better error handling
+        const handleReviveClick = () => {
+            console.log('Revive button clicked, isWatchingAd:', this.isWatchingAd);
+            if (this.isWatchingAd) {
+                console.log('Already watching ad, ignoring click');
+                return;
+            }
+            this.watchAdAndRevive();
+        };
 
-        // Add click effect
+        // Add multiple event listeners for better compatibility
         background.on('pointerdown', () => {
-            // 移除缩放效果，只保留点击功能
+            console.log('Revive button pointerdown');
         });
 
-        // Add click handler
-        background.on('pointerup', () => {
-            this.watchAdAndRevive();
+        background.on('pointerup', handleReviveClick);
+        background.on('pointerover', () => {
+            console.log('Revive button hover');
         });
         
-        // Also make text interactive
+        // Also make text interactive with same handlers
         text.setInteractive(new Phaser.Geom.Rectangle(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
         text.on('pointerdown', () => {
-            // 移除缩放效果，只保留点击功能
+            console.log('Revive text pointerdown');
         });
-        text.on('pointerup', () => {
-            this.watchAdAndRevive();
+        text.on('pointerup', handleReviveClick);
+        text.on('pointerover', () => {
+            console.log('Revive text hover');
         });
+
+        // Add container-level interaction as backup
+        this.reviveButton.setInteractive(new Phaser.Geom.Rectangle(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
+        this.reviveButton.on('pointerdown', () => {
+            console.log('Revive container pointerdown');
+        });
+        this.reviveButton.on('pointerup', handleReviveClick);
     }
 
     private createRestartButton(x: number, y: number): void {
@@ -263,29 +303,90 @@ export class GameOverScene extends Phaser.Scene {
 
 
     private watchAdAndRevive(): void {
-        if (this.isWatchingAd) return; // Prevent multiple clicks
+        console.log('watchAdAndRevive called, current state:', {
+            isWatchingAd: this.isWatchingAd,
+            reviveButton: !!this.reviveButton,
+            scene: this.scene.key
+        });
+
+        if (this.isWatchingAd) {
+            console.log('Already watching ad, preventing duplicate calls');
+            return;
+        }
+        
+        if (!this.reviveButton) {
+            console.error('Revive button not found!');
+            return;
+        }
         
         console.log('Starting ad watch for revive...');
         this.isWatchingAd = true;
         
-        // Change revive button to show loading state
-        const background = this.reviveButton.getAt(0) as Phaser.GameObjects.Graphics;
-        background.clear();
-        background.fillGradientStyle(0x666666, 0x555555, 0x444444, 0x333333, 1);
-        background.fillRoundedRect(-120, -30, 240, 60, 30);
-        background.lineStyle(3, 0x888888, 1);
-        background.strokeRoundedRect(-120, -30, 240, 60, 30);
+        try {
+            // Change revive button to show loading state
+            const background = this.reviveButton.getAt(0) as Phaser.GameObjects.Graphics;
+            const text = this.reviveButton.getAt(1) as Phaser.GameObjects.Text;
+            
+            if (background && text) {
+                background.clear();
+                background.fillGradientStyle(0x666666, 0x555555, 0x444444, 0x333333, 1);
+                background.fillRoundedRect(-120, -30, 240, 60, 30);
+                background.lineStyle(3, 0x888888, 1);
+                background.strokeRoundedRect(-120, -30, 240, 60, 30);
+                
+                text.setText('📺 WATCHING AD...');
+                
+                // Disable button interactivity during ad watching
+                background.disableInteractive();
+                text.disableInteractive();
+                this.reviveButton.disableInteractive();
+            } else {
+                console.error('Failed to get button elements');
+                this.isWatchingAd = false;
+                return;
+            }
+            
+            // Create loading animation
+            this.createAdLoadingEffect();
+            
+            // Mock ad watching - simulate 3 seconds
+            this.time.delayedCall(3000, () => {
+                console.log('Ad watching simulation completed');
+                this.onAdCompleted();
+            });
+            
+        } catch (error) {
+            console.error('Error in watchAdAndRevive:', error);
+            this.isWatchingAd = false;
+            // Restore button state on error
+            this.restoreReviveButton();
+        }
+    }
+
+    private restoreReviveButton(): void {
+        if (!this.reviveButton) return;
         
-        const text = this.reviveButton.getAt(1) as Phaser.GameObjects.Text;
-        text.setText('📺 WATCHING AD...');
-        
-        // Create loading animation
-        this.createAdLoadingEffect();
-        
-        // Mock ad watching - simulate 3 seconds
-        this.time.delayedCall(3000, () => {
-            this.onAdCompleted();
-        });
+        try {
+            const background = this.reviveButton.getAt(0) as Phaser.GameObjects.Graphics;
+            const text = this.reviveButton.getAt(1) as Phaser.GameObjects.Text;
+            
+            if (background && text) {
+                background.clear();
+                background.fillGradientStyle(0x4CAF50, 0x45A049, 0x388E3C, 0x2E7D32, 1);
+                background.fillRoundedRect(-120, -30, 240, 60, 30);
+                background.lineStyle(3, 0x66BB6A, 1);
+                background.strokeRoundedRect(-120, -30, 240, 60, 30);
+                
+                text.setText('📺 REVIVE BY WATCH AD');
+                
+                // Re-enable button interactivity
+                background.setInteractive(new Phaser.Geom.Rectangle(-120, -30, 240, 60), Phaser.Geom.Rectangle.Contains);
+                text.setInteractive(new Phaser.Geom.Rectangle(-120, -30, 240, 60), Phaser.Geom.Rectangle.Contains);
+                this.reviveButton.setInteractive(new Phaser.Geom.Rectangle(-120, -30, 240, 60), Phaser.Geom.Rectangle.Contains);
+            }
+        } catch (error) {
+            console.error('Error restoring revive button:', error);
+        }
     }
 
     private createAdLoadingEffect(): void {
@@ -326,31 +427,51 @@ export class GameOverScene extends Phaser.Scene {
     private onAdCompleted(): void {
         console.log('Ad completed! Reviving player...');
         
-        // Show success effect
-        this.createReviveSuccessEffect();
+        if (!this.reviveButton) {
+            console.error('Revive button not found in onAdCompleted');
+            this.isWatchingAd = false;
+            return;
+        }
         
-        // Change button text to show success
-        const text = this.reviveButton.getAt(1) as Phaser.GameObjects.Text;
-        text.setText('✅ REVIVED!');
-        
-        const background = this.reviveButton.getAt(0) as Phaser.GameObjects.Graphics;
-        background.clear();
-        background.fillGradientStyle(0x4CAF50, 0x45A049, 0x388E3C, 0x2E7D32, 1);
-        background.fillRoundedRect(-120, -30, 240, 60, 30);
-        background.lineStyle(3, 0x66BB6A, 1);
-        background.strokeRoundedRect(-120, -30, 240, 60, 30);
-        
-        // Disable button interactivity to prevent multiple clicks
-        background.disableInteractive();
-        text.disableInteractive();
-        
-        // Reset the ad watching flag
-        this.isWatchingAd = false;
-        
-        // After a short delay, revive the player
-        this.time.delayedCall(1000, () => {
-            this.revivePlayer();
-        });
+        try {
+            // Show success effect
+            this.createReviveSuccessEffect();
+            
+            // Change button text to show success
+            const text = this.reviveButton.getAt(1) as Phaser.GameObjects.Text;
+            const background = this.reviveButton.getAt(0) as Phaser.GameObjects.Graphics;
+            
+            if (text && background) {
+                text.setText('✅ REVIVED!');
+                
+                background.clear();
+                background.fillGradientStyle(0x4CAF50, 0x45A049, 0x388E3C, 0x2E7D32, 1);
+                background.fillRoundedRect(-120, -30, 240, 60, 30);
+                background.lineStyle(3, 0x66BB6A, 1);
+                background.strokeRoundedRect(-120, -30, 240, 60, 30);
+                
+                // Keep button disabled to prevent multiple clicks
+                background.disableInteractive();
+                text.disableInteractive();
+                this.reviveButton.disableInteractive();
+            } else {
+                console.error('Failed to get button elements in onAdCompleted');
+            }
+            
+            // Reset the ad watching flag
+            this.isWatchingAd = false;
+            
+            // After a short delay, revive the player
+            this.time.delayedCall(1000, () => {
+                console.log('Starting player revival...');
+                this.revivePlayer();
+            });
+            
+        } catch (error) {
+            console.error('Error in onAdCompleted:', error);
+            this.isWatchingAd = false;
+            this.restoreReviveButton();
+        }
     }
 
     private createReviveSuccessEffect(): void {
