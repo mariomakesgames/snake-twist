@@ -117,6 +117,9 @@ export class FoodTutorialManager {
             gameState.isPaused = true;
             console.log('Game paused for tutorial');
         }
+        
+        // 禁用移动输入管理器以避免干扰tutorial按钮点击
+        this.disableMobileInput();
     }
 
     private resumeGame(): void {
@@ -124,6 +127,41 @@ export class FoodTutorialManager {
         if (gameState && !gameState.isGameOver) {
             gameState.isPaused = false;
             console.log('Game resumed after tutorial');
+        }
+        
+        // 重新启用移动输入管理器
+        this.enableMobileInput();
+    }
+
+    private disableMobileInput(): void {
+        try {
+            // 获取当前场景的snake实例并禁用其移动输入管理器
+            const gameState = (window as any).gameState;
+            if (gameState && gameState.currentScene && gameState.currentScene.snake) {
+                const snake = gameState.currentScene.snake;
+                if (snake.mobileInputManager) {
+                    snake.mobileInputManager.disable();
+                    console.log('Mobile input manager disabled for tutorial');
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to disable mobile input manager:', error);
+        }
+    }
+
+    private enableMobileInput(): void {
+        try {
+            // 重新启用移动输入管理器
+            const gameState = (window as any).gameState;
+            if (gameState && gameState.currentScene && gameState.currentScene.snake) {
+                const snake = gameState.currentScene.snake;
+                if (snake.mobileInputManager) {
+                    snake.mobileInputManager.enable();
+                    console.log('Mobile input manager enabled after tutorial');
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to enable mobile input manager:', error);
         }
     }
 
@@ -281,49 +319,37 @@ export class FoodTutorialManager {
 
         // Make button interactive
         buttonBg.setInteractive();
-        buttonBg.on('pointerover', () => {
-            this.scene.tweens.add({
-                targets: buttonBg,
-                scaleX: 1.1,
-                scaleY: 1.1,
-                duration: 150,
-                ease: 'Power2'
-            });
-        });
-
-        buttonBg.on('pointerout', () => {
-            this.scene.tweens.add({
-                targets: buttonBg,
-                scaleX: 1,
-                scaleY: 1,
-                duration: 150,
-                ease: 'Power2'
-            });
-        });
-
-        buttonBg.on('pointerdown', () => {
-            this.scene.tweens.add({
-                targets: buttonBg,
-                scaleX: 0.95,
-                scaleY: 0.95,
-                duration: 100,
-                ease: 'Power2',
-                yoyo: true
-            });
-        });
-
-        buttonBg.on('pointerup', () => {
+        buttonText.setInteractive(); // 添加文本交互性
+        
+        // 定义点击处理函数
+        const handleButtonClick = () => {
+            console.log('Tutorial button clicked, currentTutorialIndex:', this.currentTutorialIndex);
             // 如果是单个教程弹窗（currentTutorialIndex为0），直接关闭
             // 如果是批量教程弹窗（currentTutorialIndex > 0），显示下一个
             if (this.currentTutorialIndex === 0) {
+                console.log('Hiding tutorial (single tutorial)');
                 this.hideTutorial();
             } else {
                 if (this.currentTutorialIndex < this.tutorials.length) {
+                    console.log('Showing next tutorial');
                     this.showNextTutorial();
                 } else {
+                    console.log('Hiding tutorial (last tutorial)');
                     this.hideTutorial();
                 }
             }
+        };
+
+        // 按钮背景事件
+        buttonBg.on('pointerup', () => {
+            console.log('Tutorial button background clicked');
+            handleButtonClick();
+        });
+
+        // 按钮文本事件
+        buttonText.on('pointerup', () => {
+            console.log('Tutorial button text clicked');
+            handleButtonClick();
         });
 
         // Create container
@@ -357,6 +383,7 @@ export class FoodTutorialManager {
     }
 
     public hideTutorial(): void {
+        console.log('hideTutorial called, tutorialOverlay exists:', !!this.tutorialOverlay);
         if (this.tutorialOverlay) {
             this.scene.tweens.add({
                 targets: this.tutorialOverlay,
@@ -366,6 +393,7 @@ export class FoodTutorialManager {
                 duration: 200,
                 ease: 'Power2',
                 onComplete: () => {
+                    console.log('Tutorial overlay animation completed, destroying overlay');
                     this.tutorialOverlay?.destroy();
                     this.tutorialOverlay = undefined;
                     this.isShowingTutorial = false;

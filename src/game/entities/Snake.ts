@@ -147,7 +147,7 @@ export class Snake {
         }
         // 如何还没到interval 则不执行
         
-        console.log('Snake updating, time:', time);
+        // console.log('Snake updating, time:', time);
         this.direction.copy(this.nextDirection); // 每个interval时候 读取nextDirection赋值给direction，inside each interval time gap, you can update nextDirection any times. only read the latest one.
         this.move();
         this.moveTime = time + this.speed;

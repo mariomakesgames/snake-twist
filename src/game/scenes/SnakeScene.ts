@@ -130,6 +130,7 @@ export class SnakeScene extends Phaser.Scene {
             gameState.isGameOver = false;
             gameState.isTeleporting = false;
             gameState.isReviving = false; // Reset revival flag
+            gameState.currentScene = this; // 设置当前场景引用
             (window as any).updateUI();
         }
         
