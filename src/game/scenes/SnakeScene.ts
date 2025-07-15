@@ -196,7 +196,7 @@ export class SnakeScene extends Phaser.Scene {
         
         const obstacles = this.obstacleManager.getObstacles();
         return obstacles.some((obstacle: any) => 
-            obstacle.x === x && obstacle.y === y
+            Math.abs(obstacle.x - x) < 15 && Math.abs(obstacle.y - y) < 15
         );
     }
 

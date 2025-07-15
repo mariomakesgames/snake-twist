@@ -180,6 +180,17 @@ export class PortalManager {
             }
         }
 
+        // Check if position overlaps with obstacles
+        const obstacleManager = (this.scene as any).obstacleManager;
+        if (obstacleManager) {
+            const obstacles = obstacleManager.getObstacles();
+            for (const obstacle of obstacles) {
+                if (Math.abs(obstacle.x - x) < 15 && Math.abs(obstacle.y - y) < 15) {
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 
