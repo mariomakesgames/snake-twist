@@ -39,9 +39,10 @@ export class MenuScene extends Phaser.Scene {
 
         // Add game instructions below the start button
         const instructions = [
-            '🎮 Controls: WASD keys, or swipe',
-            '🍎 Goal: Eat food to grow',
-            '⚠️ Avoid: Walls and your own body!'
+            '🎮 Controls: WASD keys, or swipe.',
+            '🍎 Goal: Eat food and boosters to grow!',
+            '⚠️ Avoid: Walls and your own body!',
+            '📺 Revive: Can pick up dropped segments.'
         ];
         const instructionsText = this.add.text(centerX, centerY + 120, instructions.join('\n'), {
             fontSize: '18px',
