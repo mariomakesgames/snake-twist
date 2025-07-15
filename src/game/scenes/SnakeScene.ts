@@ -1088,41 +1088,22 @@ export class SnakeScene extends Phaser.Scene {
         ).setOrigin(0.5);
         
         revivalText.setAlpha(0);
-        revivalText.setScale(0.3);
+        revivalText.setScale(0.5);
         
         this.tweens.add({
             targets: revivalText,
             alpha: 1,
-            scaleX: 1.3,
-            scaleY: 1.3,
-            duration: 700,
+            scaleX: 1,
+            scaleY: 1,
+            duration: 600,
             ease: 'Back.easeOut',
-            onComplete: () => {
-                this.tweens.add({
-                    targets: revivalText,
-                    scaleX: 1,
-                    scaleY: 1,
-                    duration: 200,
-                    ease: 'Power2'
-                });
-            }
-        });
-        
-        // Add pulsing and floating animation
-        this.tweens.add({
-            targets: revivalText,
-            alpha: 0.8,
-            y: revivalText.y - 30,
-            duration: 1500,
-            ease: 'Sine.easeInOut',
-            yoyo: true,
-            repeat: 1,
             onComplete: () => {
                 this.tweens.add({
                     targets: revivalText,
                     alpha: 0,
                     y: revivalText.y - 50,
                     duration: 800,
+                    delay: 500,
                     ease: 'Power2',
                     onComplete: () => {
                         revivalText.destroy();
