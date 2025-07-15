@@ -145,21 +145,5 @@ export class Portal {
         this.sprite.destroy();
     }
 
-    public static createPortalEffect(scene: Phaser.Scene, x: number, y: number): void {
-        // 创建传送特效
-        const effect = scene.add.graphics();
-        effect.fillStyle(0x4a90e2, 0.5);
-        effect.fillCircle(x, y, 20);
-        effect.setAlpha(1);
 
-        scene.tweens.add({
-            targets: effect,
-            alpha: 0,
-            scaleX: 1.3,
-            scaleY: 1.3,
-            duration: 600,
-            ease: 'Power2',
-            onComplete: () => effect.destroy()
-        });
-    }
 } 

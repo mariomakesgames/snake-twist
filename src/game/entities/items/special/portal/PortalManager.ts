@@ -205,7 +205,6 @@ export class PortalManager {
                 if (target) {
                     this.startTeleportation(portal, target);
                     const targetPos = target.getPosition();
-                    Portal.createPortalEffect(this.scene, targetPos.x, targetPos.y);
                     return targetPos;
                 }
             }
