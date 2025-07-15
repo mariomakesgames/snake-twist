@@ -139,9 +139,6 @@ export class SnakeScene extends Phaser.Scene {
         // Create mobile controls if on mobile device
         this.createMobileControls();
         
-        // 调试模式：总是重新开始游戏，忽略复活状态
-        this.autoStartGame();
-        
         // Initialize game state
         if (gameState) {
             if (!gameState.isReviving) {
@@ -151,9 +148,22 @@ export class SnakeScene extends Phaser.Scene {
             gameState.isPaused = false;
             gameState.isGameOver = false;
             gameState.isTeleporting = false;
-            gameState.isReviving = false; // Reset revival flag
             gameState.currentScene = this; // 设置当前场景引用
             (window as any).updateUI();
+        }
+        
+        // Start game based on revival state
+        if (gameState && gameState.isReviving) {
+            // Revival mode - call reviveGame instead of autoStartGame
+            this.reviveGame();
+        } else {
+            // New game mode
+            this.autoStartGame();
+        }
+        
+        // Reset revival flag after handling
+        if (gameState) {
+            gameState.isReviving = false;
         }
         
         // Notify that scene is ready
@@ -280,17 +290,31 @@ export class SnakeScene extends Phaser.Scene {
         graphics.stroke();
     }
 
-    private resetSnake(keepLength: boolean = false): void {
+    private resetSnake(keepLength: boolean = false, repositionFood: boolean = true): void {
         // Find a valid spawn position that doesn't overlap with obstacles
         const centerX = Math.floor(this.gameWidth / this.gridSize / 2) * this.gridSize + this.gridSize / 2;
         const centerY = Math.floor(this.gameHeight / this.gridSize / 2) * this.gridSize + this.gridSize / 2;
         
         const validPosition = this.findValidSnakePosition(centerX, centerY);
         
+        // Save current length if we need to keep it
+        const currentLength = this.snake.body.length;
+        
         // Reset head position
         this.snake.head.setPosition(validPosition.x, validPosition.y);
         
-        // Reset body segments
+        // If not keeping length, reset to 3 segments
+        if (!keepLength) {
+            // Remove extra segments beyond 3
+            while (this.snake.body.length > 3) {
+                const lastSegment = this.snake.body.pop();
+                if (lastSegment) {
+                    lastSegment.destroy();
+                }
+            }
+        }
+        
+        // Reset body segments positions
         for (let i = 1; i < this.snake.body.length; i++) {
             const segmentX = validPosition.x - i * this.gridSize;
             const segmentY = validPosition.y;
@@ -300,18 +324,20 @@ export class SnakeScene extends Phaser.Scene {
         // Reset direction
         this.snake.direction.set(1, 0);
         
-
-        
         // Reset snake state
         this.snake.isMoving = false;
         this.snake.setSpeed(this.gameSpeed);
         
-        // Reposition all food
-        this.food.reposition();
-        this.growthBoostFood.reposition();
-        this.shrinkFood.reposition();
-        this.speedBoostFood.reposition();
-        this.slowFood.reposition();
+        // Only reposition food if explicitly requested (not during revival)
+        if (repositionFood) {
+            this.food.reposition();
+            this.growthBoostFood.reposition();
+            this.shrinkFood.reposition();
+            this.speedBoostFood.reposition();
+            this.slowFood.reposition();
+        }
+        
+        console.log(`Snake reset: length ${this.snake.body.length}, keepLength: ${keepLength}`);
     }
 
     private autoStartGame(): void {
@@ -749,6 +775,14 @@ export class SnakeScene extends Phaser.Scene {
             // Create segment drops
             this.createSegmentDrops();
             
+            // Store segment drops data for revival BEFORE destroying snake
+            gameState.segmentDropsData = this.segmentDrops.map(drop => ({
+                x: drop.sprite.x,
+                y: drop.sprite.y,
+                value: drop.value
+            }));
+            console.log('Saved segment drops data:', gameState.segmentDropsData);
+            
             // Stop portal manager
             this.portalManager.stop();
             
@@ -786,13 +820,6 @@ export class SnakeScene extends Phaser.Scene {
             this.isGameStarted = false;
             
             EventBus.emit('game-over', gameState.score);
-            
-            // Store segment drops data for revival
-            gameState.segmentDropsData = this.segmentDrops.map(drop => ({
-                x: drop.sprite.x,
-                y: drop.sprite.y,
-                value: drop.value
-            }));
             
             // Save obstacles for revival
             if (this.obstacleManager) {
@@ -1122,10 +1149,10 @@ export class SnakeScene extends Phaser.Scene {
         // Recreate segment drops from saved data
         this.recreateSegmentDrops();
         
-        // Reset snake position and state but keep score
-        this.resetSnake();
+        // Reset snake position and state but keep length and don't reposition food
+        this.resetSnake(true, false);
         
-        // Restore snake length if saved
+        // Restore snake to saved length
         if (gameState.savedSnakeLength && gameState.savedSnakeLength > 3) {
             const currentLength = this.snake.body.length;
             const targetLength = gameState.savedSnakeLength;
@@ -1135,10 +1162,13 @@ export class SnakeScene extends Phaser.Scene {
                 const segmentsToAdd = targetLength - currentLength;
                 this.snake.grow(segmentsToAdd);
                 console.log(`Restored snake length from ${currentLength} to ${targetLength} (added ${segmentsToAdd} segments)`);
+            } else if (currentLength > targetLength) {
+                // Shrink snake to saved length
+                const segmentsToRemove = currentLength - targetLength;
+                this.snake.shrink(segmentsToRemove);
+                console.log(`Restored snake length from ${currentLength} to ${targetLength} (removed ${segmentsToRemove} segments)`);
             }
         }
-        
-        // Segment drops remain on the ground for manual pickup
         
         // Start the snake
         this.snake.start();
