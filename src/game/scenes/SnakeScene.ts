@@ -997,73 +997,6 @@ export class SnakeScene extends Phaser.Scene {
     }
 
     private createRevivalCelebration(): void {
-        // Create revival particles with golden colors
-        const colors = [0xFFD700, 0xFFA500, 0xFF8C00, 0xFF6347, 0x4CAF50];
-        for (let i = 0; i < 30; i++) {
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            const particle = this.add.circle(
-                this.snake.head.x + (Math.random() - 0.5) * 120,
-                this.snake.head.y + (Math.random() - 0.5) * 120,
-                4 + Math.random() * 4,
-                color
-            );
-            
-            // Add golden glow effect
-            const glow = this.add.circle(particle.x, particle.y, particle.radius + 10, color, 0.5);
-            
-            this.tweens.add({
-                targets: [particle, glow],
-                x: particle.x + (Math.random() - 0.5) * 250,
-                y: particle.y + (Math.random() - 0.5) * 250,
-                alpha: 0,
-                scale: 0,
-                duration: 1200 + Math.random() * 600,
-                ease: 'Power2',
-                onComplete: () => {
-                    particle.destroy();
-                    glow.destroy();
-                }
-            });
-        }
-        
-        // Create golden rings effect
-        for (let i = 0; i < 4; i++) {
-            const ring = this.add.circle(
-                this.snake.head.x,
-                this.snake.head.y,
-                25 + i * 35,
-                0xFFD700,
-                0
-            );
-            ring.setStrokeStyle(4, 0xFFD700, 0.9);
-            
-            this.tweens.add({
-                targets: ring,
-                radius: 180 + i * 60,
-                alpha: 0,
-                duration: 1000 + i * 250,
-                delay: i * 120,
-                ease: 'Power2',
-                onComplete: () => {
-                    ring.destroy();
-                }
-            });
-        }
-        
-        // Add a golden gradient flash effect
-        const flash = this.add.graphics();
-        flash.fillGradientStyle(0xFFD700, 0xFFA500, 0xFF8C00, 0x4CAF50, 0.5, 0.5, 0.3, 0.3);
-        flash.fillRect(0, 0, this.gameWidth, this.gameHeight);
-        
-        this.tweens.add({
-            targets: flash,
-            alpha: 0,
-            duration: 600,
-            ease: 'Power2',
-            onComplete: () => {
-                flash.destroy();
-            }
-        });
         
         // Add revival text with golden effect
         const revivalText = this.add.text(
@@ -1112,11 +1045,11 @@ export class SnakeScene extends Phaser.Scene {
             }
         });
         
-        // Add sparkle effects around the text
+        // Add sparkle effects around the snake
         for (let i = 0; i < 8; i++) {
             const sparkle = this.add.text(
-                revivalText.x + (Math.random() - 0.5) * 200,
-                revivalText.y + (Math.random() - 0.5) * 100,
+                this.snake.head.x + (Math.random() - 0.5) * 200,
+                this.snake.head.y + (Math.random() - 0.5) * 100,
                 '✨',
                 {
                     fontSize: '24px',

@@ -340,6 +340,10 @@ export class GameOverScene extends Phaser.Scene {
         background.lineStyle(3, 0x66BB6A, 1);
         background.strokeRoundedRect(-120, -30, 240, 60, 30);
         
+        // Disable button interactivity to prevent multiple clicks
+        background.disableInteractive();
+        text.disableInteractive();
+        
         // Reset the ad watching flag
         this.isWatchingAd = false;
         
