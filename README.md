@@ -9,29 +9,24 @@ A modern, feature-rich snake game built with Phaser 3, React, and TypeScript. Th
 #### 🍎 Multi-Type Food System
 - **Green Food**: Standard food that grows the snake by 1 segment (+10 score)
 - **Yellow Growth Boost**: Grows snake by 5 segments (+50 score)
-- **Orange Speed Boost**: Grows snake by 1 segment (+10 score) + permanently increases speed by 20ms
-- **Pink Slow Food**: Grows snake by 1 segment (+10 score) + permanently decreases speed by 30ms
+- **Orange Speed Boost**: Grows snake by 1 segment (+10 score) + permanently reduces movement interval by 20ms (faster)
+- **Pink Slow Food**: Grows snake by 1 segment (+10 score) + permanently increases movement interval by 30ms (slower)
 - **Red Shrink Food**: Reduces snake length by 1 segment (no score change)
 
 #### 💀 Revival & Ad System
 - **Segment Drops**: When snake dies, body segments scatter as collectible drops (1-5 drops based on length)
-- **Ad-Based Revival**: Watch a 3-second ad to revive and return to the exact death position
-- **Instant Recovery**: Collect dropped segments to immediately restore snake length
-- **Visual Feedback**: Pulsing green drops with sparkle effects and collection animations
-- **Score Preservation**: Keep your current score and continue from where you died
+- **Ad-Based Revival**: Watch a 3-second ad to revive
+- **Opportunity Recovery**: Collect dropped segments to restore snake length
+- **Score Preservation**: Keep your current score and length
 - **Strategic Value**: Higher snake length = more segment drops = greater revival benefit
 
 #### 🌀 Portal System
 - **Teleportation Mechanics**: Two linked portals spawn every 15 seconds (after score 10)
 - **Smart Spawning**: Portals avoid snake, food, and obstacles
-- **Dynamic Timing**: Teleportation duration scales with snake length
-- **Visual Effects**: Rotating purple portals with teleportation animations
 - **Dynamic Spawn Rate**: Spawn probability decreases with higher scores and longer snakes
-- **Consecutive Limit**: Maximum 3 consecutive teleportations before cooldown
-- **Minimum Lifetime**: Portals must exist for at least 10 seconds
 
 #### 🧱 Obstacle System
-- **8 Different Patterns**: L, T, S, Z, M shapes, maze, simple, and random patterns
+- **8 Different Patterns**: L, T, H shapes, maze, simple, and random patterns
 - **Smart Placement**: Obstacles avoid snake spawn area and food
 - **Balanced Difficulty**: Simple patterns (30% chance) for beginners, complex patterns for experts
 - **Collision Detection**: Snake dies when hitting obstacles
@@ -43,12 +38,12 @@ A modern, feature-rich snake game built with Phaser 3, React, and TypeScript. Th
 - **Visual Indicators**: On-screen control instructions
 
 #### 🎯 Advanced Features
-- **Pause System**: Pause/resume functionality
+- **Pause System**: Pause/resume on switching to other tabs or apps or return to home on phones
 - **Revival System**: Watch ads to revive and collect dropped segments for instant snake growth
 - **Tutorial System**: Food type explanations for new players
 - **Settings Management**: Toggle obstacle mode on/off
-- **Progressive Speed**: Speed increases by 10ms every 50 points scored
-- **Speed Limits**: Minimum speed 30ms, maximum speed 300ms
+- **Progressive Speed**: Movement interval decreases by 10ms every 50 points scored (faster)
+- **Speed Limits**: Minimum interval 30ms, maximum interval 300ms
 
 
 ## 🚀 How to Run Locally
@@ -86,7 +81,6 @@ The next major development focus will be creating a comprehensive level editor a
 
 #### 🏗️ Level Editor Features
 - **Visual Editor**: Drag-and-drop interface for placing obstacles, portals, and food
-- **Grid-Based Design**: 20x20 grid system with snap-to-grid functionality
 - **Element Library**: Pre-designed obstacle patterns (L, T, S, Z, M shapes, mazes)
 - **Portal Placement**: Strategic portal positioning for teleportation puzzles
 - **Food Distribution**: Place different food types at specific locations
