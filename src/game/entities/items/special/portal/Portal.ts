@@ -5,17 +5,30 @@ export class Portal {
     private rotationTween: Phaser.Tweens.Tween | null = null;
     public isActive: boolean = true;
     public teleportingSnake: boolean = false;
-    // private teleportEffect: Phaser.GameObjects.Graphics | null = null; // Removed green effect
+    private glowEffect: Phaser.GameObjects.Graphics | null = null;
 
     constructor(scene: Phaser.Scene, x: number, y: number) {
         this.scene = scene;
         
-        // Create portal graphics
+        // Create portal graphics with improved design
         const portalGraphics = scene.add.graphics();
-        portalGraphics.lineStyle(3, 0x9b59b6);
-        portalGraphics.strokeCircle(15, 15, 12);
-        portalGraphics.lineStyle(1, 0xe74c3c);
-        portalGraphics.strokeCircle(15, 15, 8);
+        
+        // 外圈光晕效果
+        portalGraphics.lineStyle(3, 0x4a90e2, 0.3);
+        portalGraphics.strokeCircle(15, 15, 13);
+        
+        // 主外圈
+        portalGraphics.lineStyle(2, 0x4a90e2, 0.8);
+        portalGraphics.strokeCircle(15, 15, 10);
+        
+        // 内圈
+        portalGraphics.lineStyle(1, 0x4a90e2, 0.9);
+        portalGraphics.strokeCircle(15, 15, 6);
+        
+        // 中心点
+        portalGraphics.fillStyle(0x4a90e2, 0.7);
+        portalGraphics.fillCircle(15, 15, 2);
+        
         portalGraphics.generateTexture('portal', 30, 30);
         portalGraphics.destroy();
 
@@ -23,8 +36,28 @@ export class Portal {
         this.sprite = scene.add.sprite(x, y, 'portal');
         this.sprite.setOrigin(0.5);
         
+        // 添加发光效果
+        this.createGlowEffect();
+        
         // Add rotation animation
         this.startRotation();
+    }
+
+    private createGlowEffect(): void {
+        this.glowEffect = this.scene.add.graphics();
+        this.glowEffect.lineStyle(4, 0x4a90e2, 0.15);
+        this.glowEffect.strokeCircle(this.sprite.x, this.sprite.y, 16);
+        this.glowEffect.setDepth(this.sprite.depth - 1);
+        
+        // 发光动画
+        this.scene.tweens.add({
+            targets: this.glowEffect,
+            alpha: 0.3,
+            duration: 1500,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            loop: -1
+        });
     }
 
     private startRotation(): void {
@@ -38,7 +71,7 @@ export class Portal {
         this.rotationTween = this.scene.tweens.add({
             targets: this.sprite,
             angle: 360,
-            duration: 2000,
+            duration: 3000,
             ease: 'Linear',
             loop: -1
         });
@@ -56,8 +89,6 @@ export class Portal {
             loop: -1
         });
     }
-
-
 
     public setTarget(target: Portal): void {
         this.targetPortal = target;
@@ -82,23 +113,25 @@ export class Portal {
         }
     }
 
-    // Removed showTeleportEffect method
-    // private showTeleportEffect(): void { ... }
-
-    // Removed hideTeleportEffect method  
-    // private hideTeleportEffect(): void { ... }
-
     public deactivate(): void {
         this.isActive = false;
         if (this.rotationTween) {
             this.rotationTween.stop();
         }
-        // 传送时不改变透明度，保持完全不透明
+        // 传送时不降低透明度，保持正常显示
+        // this.sprite.setAlpha(0.3); // 移除透明度降低
+        // if (this.glowEffect) {
+        //     this.glowEffect.setAlpha(0.1); // 移除发光效果透明度降低
+        // }
     }
 
     public activate(): void {
         this.isActive = true;
+        // 确保透明度为1，即使之前没有降低过
         this.sprite.setAlpha(1);
+        if (this.glowEffect) {
+            this.glowEffect.setAlpha(0.15);
+        }
         this.startNormalRotation();
     }
 
@@ -106,24 +139,27 @@ export class Portal {
         if (this.rotationTween) {
             this.rotationTween.stop();
         }
-        // this.hideTeleportEffect(); // Removed
+        if (this.glowEffect) {
+            this.glowEffect.destroy();
+        }
         this.sprite.destroy();
     }
 
     public static createPortalEffect(scene: Phaser.Scene, x: number, y: number): void {
-        // Removed purple diffusion effect
-        // const effect = scene.add.graphics();
-        // effect.fillStyle(0x9b59b6, 0.8);
-        // effect.fillCircle(x, y, 30);
-        // effect.setAlpha(1);
+        // 创建传送特效
+        const effect = scene.add.graphics();
+        effect.fillStyle(0x4a90e2, 0.5);
+        effect.fillCircle(x, y, 20);
+        effect.setAlpha(1);
 
-        // scene.tweens.add({
-        //     targets: effect,
-        //     alpha: 0,
-        //     scaleX: 2,
-        //     scaleY: 2,
-        //     duration: 500,
-        //     onComplete: () => effect.destroy()
-        // });
+        scene.tweens.add({
+            targets: effect,
+            alpha: 0,
+            scaleX: 1.3,
+            scaleY: 1.3,
+            duration: 600,
+            ease: 'Power2',
+            onComplete: () => effect.destroy()
+        });
     }
 } 
