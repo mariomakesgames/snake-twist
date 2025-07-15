@@ -8,8 +8,9 @@ export class SegmentDrop {
         this.scene = scene;
         this.value = value;
         
-        // Create visual representation of dropped segment
-        this.sprite = scene.add.rectangle(x, y, 16, 16, 0x4CAF50);
+        // Create visual representation of dropped segment, aligned to grid
+        const gridSize = (scene as any).gridSize || 20;
+        this.sprite = scene.add.rectangle(x, y, gridSize - 2, gridSize - 2, 0x4CAF50);
         this.sprite.setStrokeStyle(2, 0x2E7D32);
         
         // Add physics body

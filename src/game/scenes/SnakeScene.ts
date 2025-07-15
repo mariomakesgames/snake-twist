@@ -658,16 +658,20 @@ export class SnakeScene extends Phaser.Scene {
         const deathX = this.snake.head.x;
         const deathY = this.snake.head.y;
         
-        // Create new drops around the death position
+        // Create new drops around the death position, aligned to grid
         for (let i = 0; i < dropCount; i++) {
             const angle = (i / dropCount) * Math.PI * 2;
             const distance = 60 + Math.random() * 40;
-            const x = deathX + Math.cos(angle) * distance;
-            const y = deathY + Math.sin(angle) * distance;
+            const rawX = deathX + Math.cos(angle) * distance;
+            const rawY = deathY + Math.sin(angle) * distance;
+            
+            // Align to grid
+            const gridX = Math.floor(rawX / this.gridSize) * this.gridSize + this.gridSize / 2;
+            const gridY = Math.floor(rawY / this.gridSize) * this.gridSize + this.gridSize / 2;
             
             // Ensure drops are within game bounds
-            const clampedX = Math.max(20, Math.min(this.gameWidth - 20, x));
-            const clampedY = Math.max(20, Math.min(this.gameHeight - 20, y));
+            const clampedX = Math.max(this.gridSize / 2, Math.min(this.gameWidth - this.gridSize / 2, gridX));
+            const clampedY = Math.max(this.gridSize / 2, Math.min(this.gameHeight - this.gridSize / 2, gridY));
             
             const segmentDrop = new SegmentDrop(this, clampedX, clampedY, 1);
             this.segmentDrops.push(segmentDrop);

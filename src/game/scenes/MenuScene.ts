@@ -39,8 +39,8 @@ export class MenuScene extends Phaser.Scene {
 
         // Add game instructions below the start button
         const instructions = [
-            '🎮 Controls: WASD keys, mouse drag, or swipe to control the snake',
-            '🍎 Goal: Eat food to grow and increase your score',
+            '🎮 Controls: WASD keys, or swipe',
+            '🍎 Goal: Eat food to grow',
             '⚠️ Avoid: Walls and your own body!'
         ];
         const instructionsText = this.add.text(centerX, centerY + 120, instructions.join('\n'), {
