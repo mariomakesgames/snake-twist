@@ -315,6 +315,20 @@ export class SnakeScene extends Phaser.Scene {
     private pauseSubtitle?: Phaser.GameObjects.Text;
 
     private createPauseOverlay(): void {
+        // 检查是否已经存在pause overlay，如果存在则先清理
+        if (this.pauseOverlay || this.pauseText || this.pauseIcon || this.pauseSubtitle) {
+            this.removePauseOverlay();
+            // 等待一帧确保清理完成
+            this.time.delayedCall(16, () => {
+                this.createPauseOverlayInternal();
+            });
+            return;
+        }
+        
+        this.createPauseOverlayInternal();
+    }
+
+    private createPauseOverlayInternal(): void {
         // Create gradient overlay with blur effect
         this.pauseOverlay = this.add.graphics();
         this.pauseOverlay.fillGradientStyle(0x000000, 0x000000, 0x1a1a1a, 0x1a1a1a, 0.7, 0.7, 0.9, 0.9);
@@ -444,23 +458,32 @@ export class SnakeScene extends Phaser.Scene {
     }
 
     private removePauseOverlay(): void {
-        if (this.pauseOverlay && this.pauseText) {
-            this.tweens.add({
-                targets: [this.pauseOverlay, this.pauseText, this.pauseIcon, this.pauseSubtitle],
-                alpha: 0,
-                duration: 200,
-                ease: 'Power2',
-                onComplete: () => {
-                    this.pauseOverlay?.destroy();
-                    this.pauseText?.destroy();
-                    this.pauseIcon?.destroy();
-                    this.pauseSubtitle?.destroy();
-                    this.pauseOverlay = undefined;
-                    this.pauseText = undefined;
-                    this.pauseIcon = undefined;
-                    this.pauseSubtitle = undefined;
-                }
-            });
+        if (this.pauseOverlay || this.pauseText || this.pauseIcon || this.pauseSubtitle) {
+            // 立即停止所有相关的tweens
+            if (this.pauseOverlay) {
+                this.tweens.killTweensOf(this.pauseOverlay);
+            }
+            if (this.pauseText) {
+                this.tweens.killTweensOf(this.pauseText);
+            }
+            if (this.pauseIcon) {
+                this.tweens.killTweensOf(this.pauseIcon);
+            }
+            if (this.pauseSubtitle) {
+                this.tweens.killTweensOf(this.pauseSubtitle);
+            }
+            
+            // 立即销毁所有元素
+            this.pauseOverlay?.destroy();
+            this.pauseText?.destroy();
+            this.pauseIcon?.destroy();
+            this.pauseSubtitle?.destroy();
+            
+            // 重置引用
+            this.pauseOverlay = undefined;
+            this.pauseText = undefined;
+            this.pauseIcon = undefined;
+            this.pauseSubtitle = undefined;
         }
     }
 

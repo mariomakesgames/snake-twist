@@ -31,8 +31,15 @@ function App()
         let lastPauseTime = 0;
         const PAUSE_COOLDOWN = 1000; // 1秒冷却时间，避免频繁触发
         let isPausedByVisibility = false; // 标记是否由visibility事件暂停
+        let isProcessingVisibilityChange = false; // 防止重复处理
 
         const handleVisibilityChange = () => {
+            // 防止重复处理
+            if (isProcessingVisibilityChange) {
+                console.log('正在处理visibility change，跳过重复调用');
+                return;
+            }
+
             const gameState = (window as any).gameState;
             if (!gameState) return;
 
@@ -48,14 +55,22 @@ function App()
                     !gameState.isPaused && 
                     !gameState.isGameOver && 
                     snakeScene.isGameActive()) {
+                    
+                    isProcessingVisibilityChange = true;
                     console.log('页面隐藏，自动暂停游戏');
                     snakeScene.setPauseState(true);
                     lastPauseTime = now;
                     isPausedByVisibility = true;
+                    
+                    // 延迟重置处理标志
+                    setTimeout(() => {
+                        isProcessingVisibilityChange = false;
+                    }, 100);
                 }
             } else {
                 // 页面重新可见时，重置标记
                 isPausedByVisibility = false;
+                isProcessingVisibilityChange = false;
             }
             // 注意：页面重新可见时不自动恢复，需要用户手动点击恢复
         };

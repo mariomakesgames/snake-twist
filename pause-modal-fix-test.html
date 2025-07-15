@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐍 Snake Game - Pause Modal 修复测试</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .test-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .test-steps {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .status {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .status ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .status li {
+            margin: 5px 0;
+        }
+        
+        #game-container {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            background: #000;
+        }
+        
+        .test-controls {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        .test-button:hover {
+            background: #45a049;
+        }
+        
+        .test-button.danger {
+            background: #f44336;
+        }
+        
+        .test-button.danger:hover {
+            background: #da190b;
+        }
+        
+        .log-container {
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-info">
+        <h1>🐍 Snake Game - Pause Modal 修复测试</h1>
+        <p>这个页面用于测试多次切换tab时pause modal重复创建的问题是否已修复。</p>
+        
+        <div class="test-steps">
+            <h3>测试步骤：</h3>
+            <ol>
+                <li>开始游戏，让蛇开始移动</li>
+                <li>快速切换tab（Alt+Tab或点击其他窗口）</li>
+                <li>观察是否只显示一个pause modal</li>
+                <li>使用测试按钮模拟快速切换</li>
+                <li>检查控制台日志确认没有重复创建</li>
+            </ol>
+        </div>
+        
+        <div class="status">
+            <strong>预期结果：</strong>
+            <ul>
+                <li>✅ 多次切换tab只显示一个pause modal</li>
+                <li>✅ 没有重复的overlay元素</li>
+                <li>✅ 控制台没有重复的创建日志</li>
+                <li>✅ 点击屏幕可以正常恢复游戏</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-controls">
+        <h3>测试控制：</h3>
+        <button class="test-button" onclick="simulateTabSwitch()">模拟Tab切换</button>
+        <button class="test-button" onclick="simulateRapidSwitches()">模拟快速切换</button>
+        <button class="test-button" onclick="clearLog()">清空日志</button>
+        <button class="test-button danger" onclick="resetGame()">重置游戏</button>
+    </div>
+
+    <div class="log-container" id="logContainer">
+        <div>等待测试开始...</div>
+    </div>
+
+    <div id="game-container">
+        <!-- 游戏将在这里加载 -->
+    </div>
+
+    <script>
+        // 日志功能
+        function log(message) {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            const logContainer = document.getElementById('logContainer');
+            logContainer.innerHTML = '<div>日志已清空...</div>';
+        }
+
+        // 模拟tab切换
+        function simulateTabSwitch() {
+            log('模拟Tab切换...');
+            
+            // 模拟页面隐藏
+            Object.defineProperty(document, 'hidden', {
+                writable: true,
+                value: true
+            });
+            
+            // 触发visibilitychange事件
+            document.dispatchEvent(new Event('visibilitychange'));
+            
+            // 延迟后模拟页面显示
+            setTimeout(() => {
+                Object.defineProperty(document, 'hidden', {
+                    writable: true,
+                    value: false
+                });
+                document.dispatchEvent(new Event('visibilitychange'));
+                log('Tab切换模拟完成');
+            }, 500);
+        }
+
+        // 模拟快速切换
+        function simulateRapidSwitches() {
+            log('开始模拟快速切换...');
+            
+            let count = 0;
+            const maxCount = 5;
+            
+            const rapidSwitch = () => {
+                if (count >= maxCount) {
+                    log('快速切换模拟完成');
+                    return;
+                }
+                
+                count++;
+                log(`快速切换 ${count}/${maxCount}`);
+                
+                // 快速切换
+                Object.defineProperty(document, 'hidden', {
+                    writable: true,
+                    value: true
+                });
+                document.dispatchEvent(new Event('visibilitychange'));
+                
+                setTimeout(() => {
+                    Object.defineProperty(document, 'hidden', {
+                        writable: true,
+                        value: false
+                    });
+                    document.dispatchEvent(new Event('visibilitychange'));
+                    
+                    // 继续下一次切换
+                    setTimeout(rapidSwitch, 200);
+                }, 100);
+            };
+            
+            rapidSwitch();
+        }
+
+        // 重置游戏
+        function resetGame() {
+            log('重置游戏...');
+            const gameState = window.gameState;
+            if (gameState) {
+                gameState.isPaused = false;
+                gameState.isGameOver = false;
+            }
+            
+            // 重新加载页面
+            location.reload();
+        }
+
+        // 监听visibility change事件
+        const originalVisibilityChange = document.addEventListener;
+        document.addEventListener = function(type, listener, options) {
+            if (type === 'visibilitychange') {
+                log('检测到visibilitychange事件监听器注册');
+            }
+            return originalVisibilityChange.call(this, type, listener, options);
+        };
+
+        // 监听游戏状态变化
+        const originalConsoleLog = console.log;
+        console.log = function(...args) {
+            const message = args.join(' ');
+            if (message.includes('页面隐藏') || message.includes('自动暂停') || 
+                message.includes('createPauseOverlay') || message.includes('removePauseOverlay')) {
+                log(`游戏日志: ${message}`);
+            }
+            originalConsoleLog.apply(console, args);
+        };
+
+        // 页面加载完成
+        window.addEventListener('load', () => {
+            log('测试页面加载完成');
+            log('开始监听游戏事件...');
+        });
+    </script>
+
+    <!-- 加载游戏 -->
+    <script type="module" src="/src/main.tsx"></script>
+</body>
+</html> 
