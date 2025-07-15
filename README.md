@@ -2,9 +2,7 @@
 
 A modern, feature-rich snake game built with Phaser 3, React, and TypeScript. This game takes the classic snake concept and adds exciting new mechanics including portals, obstacles, special food types, and mobile support.
  
-## 🎮 Game Concept & Game Loop
-
-### Enhanced Features
+## 🎮 Game Features
 
 #### 🍎 Multi-Type Food System
 - **Green Food**: Standard food that grows the snake by 1 segment (+10 score)
@@ -42,7 +40,6 @@ A modern, feature-rich snake game built with Phaser 3, React, and TypeScript. Th
 - **Revival System**: Watch ads to revive and collect dropped segments for instant snake growth
 - **Tutorial System**: Food type explanations for new players
 - **Settings Management**: Toggle obstacle mode on/off
-- **Progressive Speed**: Movement interval decreases by 10ms every 50 points scored (faster)
 - **Speed Limits**: Minimum interval 30ms, maximum interval 300ms
 
 
@@ -81,7 +78,7 @@ The next major development focus will be creating a comprehensive level editor a
 
 #### 🏗️ Level Editor Features
 - **Visual Editor**: Drag-and-drop interface for placing obstacles, portals, and food
-- **Element Library**: Pre-designed obstacle patterns (L, T, S, Z, M shapes, mazes)
+- **Element Library**: Pre-designed obstacle patterns (L, T, H, Z shapes, mazes)
 - **Portal Placement**: Strategic portal positioning for teleportation puzzles
 - **Food Distribution**: Place different food types at specific locations
 - **Real-time Preview**: Test levels instantly within the editor
