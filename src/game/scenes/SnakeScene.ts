@@ -136,8 +136,7 @@ export class SnakeScene extends Phaser.Scene {
         
 
         
-        // Create mobile controls if on mobile device
-        this.createMobileControls();
+
         
         // Initialize game state
         if (gameState) {
@@ -931,25 +930,7 @@ export class SnakeScene extends Phaser.Scene {
         }
     }
     
-    private collectSegmentDrops(): void {
-        let totalCollected = 0;
-        
-        this.segmentDrops.forEach(drop => {
-            const collected = drop.collect();
-            totalCollected += collected;
-        });
-        
-        if (totalCollected > 0) {
-            console.log(`Collected ${totalCollected} segment drops`);
-            
-            // Store the collected count to apply after snake is recreated
-            const gameState = (window as any).gameState;
-            gameState.collectedSegments = totalCollected;
-        }
-        
-        // Clear the drops array
-        this.segmentDrops = [];
-    }
+
 
     private createGameOverParticles(): void {
         // Create dramatic particle effect with green colors
@@ -1002,132 +983,7 @@ export class SnakeScene extends Phaser.Scene {
         this.snake.update(time);
     }
 
-    private createMobileControls(): void {
-        // Create modern instruction text with gradient background
-        const instructionBg = this.add.graphics();
-        instructionBg.fillGradientStyle(0x4CAF50, 0x45A049, 0x388E3C, 0x2E7D32, 0.8, 0.8, 0.9, 0.9);
-        instructionBg.fillRoundedRect(
-            this.gameWidth / 2 - 200, 
-            this.gameHeight + 10, 
-            400, 
-            30, 
-            15
-        );
-        instructionBg.lineStyle(2, 0x66BB6A, 1);
-        instructionBg.strokeRoundedRect(
-            this.gameWidth / 2 - 200, 
-            this.gameHeight + 10, 
-            400, 
-            30, 
-            15
-        );
 
-        const instructionText = this.add.text(
-            this.gameWidth / 2,
-            this.gameHeight + 25,
-            '🎮 Use WASD keys, mouse drag, or swipe to control',
-            {
-                fontSize: '16px',
-                color: '#ffffff',
-                fontFamily: 'Arial, sans-serif',
-                fontStyle: 'bold',
-                stroke: '#2E7D32',
-                strokeThickness: 1
-            }
-        ).setOrigin(0.5);
-
-        // Create direction indicators (only for mobile)
-        if (isMobile) {
-            const centerX = this.gameWidth / 2;
-            const centerY = this.gameHeight + 80;
-            const arrowSize = 20;
-            const arrowColor = 0x4CAF50;
-            const arrowAlpha = 0.6;
-
-            // Create circular background for arrows
-            const arrowBg = this.add.graphics();
-            arrowBg.fillStyle(0xffffff, 0.1);
-            arrowBg.fillCircle(centerX, centerY, 60);
-            arrowBg.lineStyle(2, 0x4CAF50, 0.3);
-            arrowBg.strokeCircle(centerX, centerY, 60);
-
-            // Up arrow with gradient
-            const upArrow = this.add.graphics();
-            upArrow.fillGradientStyle(arrowColor, arrowColor, 0x66BB6A, 0x66BB6A, arrowAlpha, arrowAlpha, 0.8, 0.8);
-            upArrow.fillTriangle(
-                centerX, centerY - 25,
-                centerX - arrowSize, centerY - 5,
-                centerX + arrowSize, centerY - 5
-            );
-
-            // Down arrow with gradient
-            const downArrow = this.add.graphics();
-            downArrow.fillGradientStyle(arrowColor, arrowColor, 0x66BB6A, 0x66BB6A, arrowAlpha, arrowAlpha, 0.8, 0.8);
-            downArrow.fillTriangle(
-                centerX, centerY + 25,
-                centerX - arrowSize, centerY + 5,
-                centerX + arrowSize, centerY + 5
-            );
-
-            // Left arrow with gradient
-            const leftArrow = this.add.graphics();
-            leftArrow.fillGradientStyle(arrowColor, arrowColor, 0x66BB6A, 0x66BB6A, arrowAlpha, arrowAlpha, 0.8, 0.8);
-            leftArrow.fillTriangle(
-                centerX - 25, centerY,
-                centerX - 5, centerY - arrowSize,
-                centerX - 5, centerY + arrowSize
-            );
-
-            // Right arrow with gradient
-            const rightArrow = this.add.graphics();
-            rightArrow.fillGradientStyle(arrowColor, arrowColor, 0x66BB6A, 0x66BB6A, arrowAlpha, arrowAlpha, 0.8, 0.8);
-            rightArrow.fillTriangle(
-                centerX + 25, centerY,
-                centerX + 5, centerY - arrowSize,
-                centerX + 5, centerY + arrowSize
-            );
-
-            // Add pulsing animation to arrows
-            [upArrow, downArrow, leftArrow, rightArrow].forEach((arrow, index) => {
-                this.tweens.add({
-                    targets: arrow,
-                    alpha: 0.3,
-                    duration: 1500,
-                    delay: index * 200,
-                    ease: 'Sine.easeInOut',
-                    yoyo: true,
-                    repeat: -1
-                });
-            });
-
-            // Store references for cleanup
-            this.mobileControls = {
-                instructionText,
-                instructionBg,
-                arrowBg,
-                upArrow,
-                downArrow,
-                leftArrow,
-                rightArrow
-            };
-        } else {
-            // For desktop, only store the instruction text and background
-            this.mobileControls = {
-                instructionText,
-                instructionBg
-            };
-        }
-    }
-
-    private mobileControls?: {
-        instructionText: Phaser.GameObjects.Text;
-        instructionBg?: Phaser.GameObjects.Graphics;
-        arrowBg?: Phaser.GameObjects.Graphics;
-        upArrow?: Phaser.GameObjects.Graphics;
-        downArrow?: Phaser.GameObjects.Graphics;
-        leftArrow?: Phaser.GameObjects.Graphics;
-        rightArrow?: Phaser.GameObjects.Graphics;
-    };
 
     private reviveGame(): void {
         console.log('Reviving game...');
