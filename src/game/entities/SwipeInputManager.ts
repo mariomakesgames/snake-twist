@@ -8,6 +8,8 @@ export class SwipeInputManager {
     private minSwipeDistance: number = 30; // Minimum swipe distance
     private maxSwipeTime: number = 500; // Maximum swipe time (milliseconds)
     private isMobile: boolean;
+    private currentX: number = 0;
+    private currentY: number = 0;
 
     constructor(scene: Phaser.Scene, snake: any) {
         this.scene = scene;
@@ -23,62 +25,100 @@ export class SwipeInputManager {
     }
 
     private setupInput(): void {
-        if (this.isMobile) {
-            this.setupTouchInput();
-        } else {
-            this.setupMouseInput();
-        }
+        // Use global event listeners to handle swipes even when dragging outside canvas
+        this.setupGlobalInput();
         
         // Keep keyboard input as backup
         this.setupKeyboardInput();
     }
 
-    private setupTouchInput(): void {
-        // Touch start
-        this.scene.input.on('pointerdown', (pointer: any) => {
-            if (pointer.isTouch) {
-                this.startSwipe(pointer.x, pointer.y);
-            }
-        });
-
-        // Touch end
-        this.scene.input.on('pointerup', (pointer: any) => {
-            if (pointer.isTouch) {
-                this.endSwipe(pointer.x, pointer.y);
-            }
-        });
-
-        // Touch move (optional, for real-time feedback)
-        this.scene.input.on('pointermove', (pointer: any) => {
-            if (pointer.isTouch && this.isTracking) {
-                // Can add visual feedback here
-                this.updateSwipeFeedback(pointer.x, pointer.y);
-            }
-        });
+    private setupGlobalInput(): void {
+        // Use global event listeners to avoid conflicts and handle out-of-canvas swipes
+        // Mouse events
+        document.addEventListener('mousedown', this.handleGlobalMouseDown);
+        document.addEventListener('mouseup', this.handleGlobalMouseUp);
+        document.addEventListener('mousemove', this.handleGlobalMouseMove);
+        
+        // Touch events
+        document.addEventListener('touchstart', this.handleGlobalTouchStart);
+        document.addEventListener('touchend', this.handleGlobalTouchEnd);
+        document.addEventListener('touchmove', this.handleGlobalTouchMove);
     }
 
-    private setupMouseInput(): void {
-        // Mouse down
-        this.scene.input.on('pointerdown', (pointer: any) => {
-            if (!pointer.isTouch) {
-                this.startSwipe(pointer.x, pointer.y);
-            }
-        });
+    private handleGlobalMouseDown = (event: MouseEvent): void => {
+        if (this.isTracking) return; // Already tracking, ignore
+        
+        // Check if the click is within the canvas bounds
+        const canvas = this.scene.game.canvas;
+        const rect = canvas.getBoundingClientRect();
+        
+        if (event.clientX >= rect.left && event.clientX <= rect.right &&
+            event.clientY >= rect.top && event.clientY <= rect.bottom) {
+            
+            this.startSwipe(event.clientX - rect.left, event.clientY - rect.top);
+        }
+    };
 
-        // Mouse release
-        this.scene.input.on('pointerup', (pointer: any) => {
-            if (!pointer.isTouch) {
-                this.endSwipe(pointer.x, pointer.y);
-            }
-        });
+    private handleGlobalMouseUp = (event: MouseEvent): void => {
+        if (!this.isTracking) return;
+        
+        // Convert global coordinates to canvas coordinates
+        const canvas = this.scene.game.canvas;
+        const rect = canvas.getBoundingClientRect();
+        
+        this.endSwipe(event.clientX - rect.left, event.clientY - rect.top);
+    };
 
-        // Mouse move (for real-time feedback)
-        this.scene.input.on('pointermove', (pointer: any) => {
-            if (!pointer.isTouch && this.isTracking) {
-                this.updateSwipeFeedback(pointer.x, pointer.y);
-            }
-        });
-    }
+    private handleGlobalTouchStart = (event: TouchEvent): void => {
+        if (this.isTracking) return; // Already tracking, ignore
+        
+        // Check if the touch is within the canvas bounds
+        const canvas = this.scene.game.canvas;
+        const rect = canvas.getBoundingClientRect();
+        const touch = event.touches[0];
+        
+        if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
+            touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+            
+            this.startSwipe(touch.clientX - rect.left, touch.clientY - rect.top);
+        }
+    };
+
+    private handleGlobalTouchEnd = (event: TouchEvent): void => {
+        if (!this.isTracking) return;
+        
+        // Convert global coordinates to canvas coordinates
+        const canvas = this.scene.game.canvas;
+        const rect = canvas.getBoundingClientRect();
+        const touch = event.changedTouches[0];
+        
+        this.endSwipe(touch.clientX - rect.left, touch.clientY - rect.top);
+    };
+
+    private handleGlobalMouseMove = (event: MouseEvent): void => {
+        if (!this.isTracking) return;
+        
+        // Update end position during global movement (for potential real-time feedback)
+        const canvas = this.scene.game.canvas;
+        const rect = canvas.getBoundingClientRect();
+        
+        // Store current position for potential use
+        this.currentX = event.clientX - rect.left;
+        this.currentY = event.clientY - rect.top;
+    };
+
+    private handleGlobalTouchMove = (event: TouchEvent): void => {
+        if (!this.isTracking) return;
+        
+        // Update end position during global movement (for potential real-time feedback)
+        const canvas = this.scene.game.canvas;
+        const rect = canvas.getBoundingClientRect();
+        const touch = event.touches[0];
+        
+        // Store current position for potential use
+        this.currentX = touch.clientX - rect.left;
+        this.currentY = touch.clientY - rect.top;
+    };
 
     private setupKeyboardInput(): void {
         // WASD keyboard input
@@ -89,27 +129,72 @@ export class SwipeInputManager {
             
             switch (key) {
                 case 'KeyW':
-                    if (this.snake.direction.y === 0) {
-                        this.snake.nextDirection.set(0, -1);
-                    }
+                    const upValid = this.setDirection('up');
+                    this.createSwipeEffect('up', upValid);
                     break;
                 case 'KeyS':
-                    if (this.snake.direction.y === 0) {
-                        this.snake.nextDirection.set(0, 1);
-                    }
+                    const downValid = this.setDirection('down');
+                    this.createSwipeEffect('down', downValid);
                     break;
                 case 'KeyA':
-                    if (this.snake.direction.x === 0) {
-                        this.snake.nextDirection.set(-1, 0);
-                    }
+                    const leftValid = this.setDirection('left');
+                    this.createSwipeEffect('left', leftValid);
                     break;
                 case 'KeyD':
-                    if (this.snake.direction.x === 0) {
-                        this.snake.nextDirection.set(1, 0);
-                    }
+                    const rightValid = this.setDirection('right');
+                    this.createSwipeEffect('right', rightValid);
                     break;
             }
         });
+    }
+
+    /**
+     * Centralized method to set snake direction based on input direction
+     * This eliminates code duplication across different input managers
+     * Returns true if direction was successfully set, false if invalid (180-degree turn)
+     */
+    private setDirection(direction: string): boolean {
+        if (!this.snake.isMoving) return false;
+        
+        switch (direction) {
+            case 'up':
+                if (this.snake.direction.y === 0) {
+                    this.snake.nextDirection.set(0, -1);
+                    return true;
+                } else if (this.snake.direction.y === -1) {
+                    // Same direction - still valid, just no change needed
+                    return true;
+                }
+                break;
+            case 'down':
+                if (this.snake.direction.y === 0) {
+                    this.snake.nextDirection.set(0, 1);
+                    return true;
+                } else if (this.snake.direction.y === 1) {
+                    // Same direction - still valid, just no change needed
+                    return true;
+                }
+                break;
+            case 'left':
+                if (this.snake.direction.x === 0) {
+                    this.snake.nextDirection.set(-1, 0);
+                    return true;
+                } else if (this.snake.direction.x === -1) {
+                    // Same direction - still valid, just no change needed
+                    return true;
+                }
+                break;
+            case 'right':
+                if (this.snake.direction.x === 0) {
+                    this.snake.nextDirection.set(1, 0);
+                    return true;
+                } else if (this.snake.direction.x === 1) {
+                    // Same direction - still valid, just no change needed
+                    return true;
+                }
+                break;
+        }
+        return false; // Invalid direction (180-degree turn)
     }
 
     private startSwipe(x: number, y: number): void {
@@ -117,9 +202,6 @@ export class SwipeInputManager {
         this.startY = y;
         this.startTime = Date.now();
         this.isTracking = true;
-        
-        // Add visual feedback
-        this.createSwipeIndicator(x, y);
     }
 
     private endSwipe(endX: number, endY: number): void {
@@ -131,7 +213,6 @@ export class SwipeInputManager {
         const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
         this.isTracking = false;
-        this.removeSwipeIndicator();
 
         // Check if swipe conditions are met
         if (distance >= this.minSwipeDistance && deltaTime <= this.maxSwipeTime) {
@@ -151,59 +232,36 @@ export class SwipeInputManager {
         
         if (absX > absY && absX / distance > directionThreshold) {
             // Horizontal swipe
-            if (deltaX > 0 && this.snake.direction.x === 0) {
+            if (deltaX > 0) {
                 // Swipe right
-                this.snake.nextDirection.set(1, 0);
-                this.createSwipeEffect('right');
-            } else if (deltaX < 0 && this.snake.direction.x === 0) {
+                const isValid = this.setDirection('right');
+                this.createSwipeEffect('right', isValid);
+            } else if (deltaX < 0) {
                 // Swipe left
-                this.snake.nextDirection.set(-1, 0);
-                this.createSwipeEffect('left');
+                const isValid = this.setDirection('left');
+                this.createSwipeEffect('left', isValid);
             }
         } else if (absY > absX && absY / distance > directionThreshold) {
             // Vertical swipe
-            if (deltaY > 0 && this.snake.direction.y === 0) {
+            if (deltaY > 0) {
                 // Swipe down
-                this.snake.nextDirection.set(0, 1);
-                this.createSwipeEffect('down');
-            } else if (deltaY < 0 && this.snake.direction.y === 0) {
+                const isValid = this.setDirection('down');
+                this.createSwipeEffect('down', isValid);
+            } else if (deltaY < 0) {
                 // Swipe up
-                this.snake.nextDirection.set(0, -1);
-                this.createSwipeEffect('up');
+                const isValid = this.setDirection('up');
+                this.createSwipeEffect('up', isValid);
             }
         }
     }
 
-    private updateSwipeFeedback(x: number, y: number): void {
-        // Update swipe indicator position
-        if (this.swipeIndicator) {
-            this.swipeIndicator.setPosition(x, y);
-        }
-    }
-
-    private swipeIndicator?: Phaser.GameObjects.Graphics;
-
-    private createSwipeIndicator(x: number, y: number): void {
-        this.swipeIndicator = this.scene.add.graphics();
-        this.swipeIndicator.lineStyle(3, 0x4CAF50, 0.8);
-        this.swipeIndicator.strokeCircle(x, y, 20);
-        this.swipeIndicator.setDepth(1000);
-    }
-
-    private removeSwipeIndicator(): void {
-        if (this.swipeIndicator) {
-            this.swipeIndicator.destroy();
-            this.swipeIndicator = undefined;
-        }
-    }
-
-    private createSwipeEffect(direction: string): void {
-        // Create visual feedback for successful swipe
+    private createSwipeEffect(direction: string, isValid: boolean = true): void {
+        // Create visual feedback for swipe - green for valid, red for invalid
         const colors = {
-            up: 0x4CAF50,
-            down: 0x4CAF50,
-            left: 0x4CAF50,
-            right: 0x4CAF50
+            up: isValid ? 0x4CAF50 : 0xFF5252,    // Green for valid, red for invalid
+            down: isValid ? 0x4CAF50 : 0xFF5252,
+            left: isValid ? 0x4CAF50 : 0xFF5252,
+            right: isValid ? 0x4CAF50 : 0xFF5252
         };
 
         const effect = this.scene.add.graphics();
@@ -264,10 +322,15 @@ export class SwipeInputManager {
     }
 
     public destroy(): void {
-        this.removeSwipeIndicator();
-        // Clean up event listeners
-        this.scene.input.off('pointerdown');
-        this.scene.input.off('pointerup');
-        this.scene.input.off('pointermove');
+        // Clean up global event listeners
+        document.removeEventListener('mousedown', this.handleGlobalMouseDown);
+        document.removeEventListener('mouseup', this.handleGlobalMouseUp);
+        document.removeEventListener('mousemove', this.handleGlobalMouseMove);
+        document.removeEventListener('touchstart', this.handleGlobalTouchStart);
+        document.removeEventListener('touchend', this.handleGlobalTouchEnd);
+        document.removeEventListener('touchmove', this.handleGlobalTouchMove);
+        
+        // Clean up keyboard event listeners
+        this.scene.input.keyboard?.off('keydown');
     }
 } 

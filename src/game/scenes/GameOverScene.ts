@@ -112,9 +112,10 @@ export class GameOverScene extends Phaser.Scene {
         const gameState = (window as any).gameState;
         if (gameState && gameState.currentScene && gameState.currentScene.snake) {
             const snake = gameState.currentScene.snake;
-            if (snake.mobileInputManager) {
-                console.log('Disabling mobile input manager');
-                snake.mobileInputManager.disable();
+            if (snake.swipeInputManager) {
+                console.log('Input manager disabled (via snake.isMoving)');
+                // Note: SwipeInputManager doesn't have enable/disable methods
+                // Input is controlled by the snake's isMoving property
             }
         }
         

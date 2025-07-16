@@ -1,4 +1,4 @@
-import { MobileInputManager } from './MobileInputManager';
+import { SwipeInputManager } from './SwipeInputManager';
 
 export class Snake {
     protected scene: Phaser.Scene;
@@ -10,9 +10,8 @@ export class Snake {
     public isMoving: boolean;
     public head: Phaser.GameObjects.Rectangle;
     
-    // Mobile input properties
-    private mobileInputManager?: MobileInputManager;
-    private isMobile: boolean = false;
+    // Input management - use SwipeInputManager for all input handling
+    private swipeInputManager?: SwipeInputManager;
 
     constructor(scene: Phaser.Scene, x: number, y: number) {
         console.log('Creating snake at:', x, y);
@@ -23,9 +22,6 @@ export class Snake {
         this.moveTime = 0;
         this.speed = (scene as any).gameSpeed;
         this.isMoving = false;
-        
-        // Detect mobile device
-        this.isMobile = this.detectMobileDevice();
         
         // Find a valid spawn position that doesn't overlap with obstacles
         const validPosition = this.findValidSpawnPosition(x, y);
@@ -50,139 +46,68 @@ export class Snake {
             console.log('Body segment', i, 'created at:', segment.x, segment.y);
         }
         
-        // Setup input handling
+        // Initialize input manager
         this.setupInput();
         console.log('Snake created with', this.body.length, 'segments');
-        console.log('Mobile device detected:', this.isMobile);
     }
 
-    private detectMobileDevice(): boolean {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-               ('ontouchstart' in window) ||
-               (navigator.maxTouchPoints > 0);
-    }
+
 
     private findValidSpawnPosition(centerX: number, centerY: number): { x: number, y: number } {
         const gridSize = (this.scene as any).gridSize || 20;
-        const gameWidth = this.scene.scale.width;
-        const gameHeight = this.scene.scale.height;
+        const margin = 2; // Keep some distance from edges
         
-        // Try the center position first
+        // Try center position first
         if (!this.isPositionOccupied(centerX, centerY)) {
             return { x: centerX, y: centerY };
         }
         
-        // If center is occupied, search in a spiral pattern
-        const maxAttempts = 100;
-        let attempts = 0;
-        let radius = 1;
-        
-        while (attempts < maxAttempts) {
-            // Check positions in a square pattern around the center
-            for (let dx = -radius; dx <= radius; dx++) {
-                for (let dy = -radius; dy <= radius; dy++) {
-                    // Only check the perimeter of the square
-                    if (Math.abs(dx) === radius || Math.abs(dy) === radius) {
-                        const testX = centerX + dx * gridSize;
-                        const testY = centerY + dy * gridSize;
-                        
-                        // Check if position is within bounds
-                        if (testX >= gridSize / 2 && testX < gameWidth - gridSize / 2 &&
-                            testY >= gridSize / 2 && testY < gameHeight - gridSize / 2) {
-                            
-                            // Check if position and body segments don't overlap with obstacles
-                            if (!this.isPositionOccupied(testX, testY) &&
-                                !this.isPositionOccupied(testX - gridSize, testY) &&
-                                !this.isPositionOccupied(testX - gridSize * 2, testY)) {
-                                console.log(`Found valid spawn position at (${testX}, ${testY}) after ${attempts} attempts`);
-                                return { x: testX, y: testY };
-                            }
-                        }
-                        attempts++;
+        // Try positions around center in expanding spiral
+        for (let radius = 1; radius <= 5; radius++) {
+            for (let angle = 0; angle < 2 * Math.PI; angle += Math.PI / 4) {
+                const x = centerX + Math.cos(angle) * radius * gridSize;
+                const y = centerY + Math.sin(angle) * radius * gridSize;
+                
+                // Ensure position is within bounds
+                if (x >= margin * gridSize && x < this.scene.scale.width - margin * gridSize &&
+                    y >= margin * gridSize && y < this.scene.scale.height - margin * gridSize) {
+                    
+                    if (!this.isPositionOccupied(x, y)) {
+                        return { x, y };
                     }
                 }
             }
-            radius++;
         }
         
-        // If no valid position found, return center (fallback)
-        console.warn('No valid spawn position found, using center as fallback');
+        // Fallback to center if no valid position found
+        console.warn('No valid spawn position found, using center');
         return { x: centerX, y: centerY };
     }
 
     private isPositionOccupied(x: number, y: number): boolean {
-        const obstacleManager = (this.scene as any).obstacleManager;
-        if (!obstacleManager) return false;
+        const gridSize = (this.scene as any).gridSize || 20;
+        const tolerance = gridSize / 2;
         
-        const obstacles = obstacleManager.getObstacles();
-        return obstacles.some((obstacle: any) => 
-            Math.abs(obstacle.x - x) < 15 && Math.abs(obstacle.y - y) < 15
-        );
+        // Check obstacles
+        const obstacles = (this.scene as any).obstacles;
+        if (obstacles) {
+            for (const obstacle of obstacles) {
+                if (Math.abs(obstacle.x - x) < tolerance && Math.abs(obstacle.y - y) < tolerance) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
 
+    /**
+     * Setup input handling using SwipeInputManager
+     * This replaces the duplicate input code that was previously in Snake.ts
+     */
     private setupInput(): void {
-        // Keyboard input (desktop) - WASD controls
-        this.scene.input.keyboard?.on('keydown', (event: any) => {
-            if (!this.isMoving) return;
-            
-            const key = event.code;
-            
-            switch (key) {
-                case 'KeyW':
-                    if (this.direction.y === 0) { // This excludes 180-degree turns
-                        this.nextDirection.set(0, -1);
-                    }
-                    break;
-                case 'KeyS':
-                    if (this.direction.y === 0) {
-                        this.nextDirection.set(0, 1);
-                    }
-                    break;
-                case 'KeyA':
-                    if (this.direction.x === 0) {
-                        this.nextDirection.set(-1, 0);
-                    }
-                    break;
-                case 'KeyD':
-                    if (this.direction.x === 0) {
-                        this.nextDirection.set(1, 0);
-                    }
-                    break;
-            }
-        });
-
-        // Touch/Mouse input (mobile and desktop)
-        this.setupMobileInput();
-    }
-
-    private setupMobileInput(): void {
-        this.mobileInputManager = new MobileInputManager(this.scene);
-        this.mobileInputManager.setSwipeCallback((direction: string) => {
-            if (!this.isMoving) return;
-            
-            switch (direction) {
-                case 'up':
-                    if (this.direction.y === 0) {
-                        this.nextDirection.set(0, -1);
-                    }
-                    break;
-                case 'down':
-                    if (this.direction.y === 0) {
-                        this.nextDirection.set(0, 1);
-                    }
-                    break;
-                case 'left':
-                    if (this.direction.x === 0) {
-                        this.nextDirection.set(-1, 0);
-                    }
-                    break;
-                case 'right':
-                    if (this.direction.x === 0) {
-                        this.nextDirection.set(1, 0);
-                    }
-                    break;
-            }
-        });
+        // Use SwipeInputManager for all input handling (keyboard, touch, mouse)
+        this.swipeInputManager = new SwipeInputManager(this.scene, this);
     }
 
     public start(): void {
@@ -321,17 +246,28 @@ export class Snake {
         console.log(`Snake shrunk by ${segments} segments! Total segments: ${this.body.length}`);
     }
 
+    public getLength(): number {
+        return this.body.length;
+    }
+
+    public getHeadPosition(): { x: number, y: number } {
+        return { x: this.head.x, y: this.head.y };
+    }
+
+    public getBodyPositions(): { x: number, y: number }[] {
+        return this.body.map(segment => ({ x: segment.x, y: segment.y }));
+    }
+
     public destroy(): void {
-        // Clean up mobile input manager
-        if (this.mobileInputManager) {
-            this.mobileInputManager.destroy();
-            this.mobileInputManager = undefined;
+        // Clean up input manager
+        if (this.swipeInputManager) {
+            this.swipeInputManager.destroy();
         }
         
         // Clean up body segments
-        this.body.forEach(segment => {
+        for (const segment of this.body) {
             segment.destroy();
-        });
+        }
         this.body = [];
     }
 } 
