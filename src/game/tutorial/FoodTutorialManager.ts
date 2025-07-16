@@ -144,6 +144,13 @@ export class FoodTutorialManager {
                     console.log('Mobile input manager disabled for tutorial');
                 }
             }
+            
+            // Also disable any global touch events that might interfere
+            // This is a safety measure to ensure tutorial buttons work properly
+            document.addEventListener('touchstart', this.preventTouchInterference, { passive: false });
+            document.addEventListener('touchend', this.preventTouchInterference, { passive: false });
+            document.addEventListener('mousedown', this.preventTouchInterference, { passive: false });
+            document.addEventListener('mouseup', this.preventTouchInterference, { passive: false });
         } catch (error) {
             console.warn('Failed to disable mobile input manager:', error);
         }
@@ -160,10 +167,27 @@ export class FoodTutorialManager {
                     console.log('Mobile input manager enabled after tutorial');
                 }
             }
+            
+            // Remove the global event listeners that were added to prevent interference
+            document.removeEventListener('touchstart', this.preventTouchInterference);
+            document.removeEventListener('touchend', this.preventTouchInterference);
+            document.removeEventListener('mousedown', this.preventTouchInterference);
+            document.removeEventListener('mouseup', this.preventTouchInterference);
         } catch (error) {
             console.warn('Failed to enable mobile input manager:', error);
         }
     }
+
+    private preventTouchInterference = (event: Event): void => {
+        // This method prevents global touch/mouse events from interfering with tutorial buttons
+        // It's used as a safety measure when tutorials are active
+        const target = event.target as HTMLElement;
+        if (target && target.closest('#gameCanvas')) {
+            // Only prevent default if the event is within the game canvas
+            // This allows tutorial buttons to work while preventing other interference
+            event.stopPropagation();
+        }
+    };
 
     public showAllTutorials(): void {
         if (this.isShowingTutorial) return;
@@ -193,6 +217,9 @@ export class FoodTutorialManager {
     private createTutorialOverlay(tutorial: FoodTutorial, shouldPause: boolean = true): void {
         // Remove existing overlay
         this.hideTutorial();
+
+        console.log('Creating tutorial overlay for:', tutorial.name);
+        console.log('Game dimensions:', this.scene.scale.width, 'x', this.scene.scale.height);
 
         const gameWidth = this.scene.scale.width;
         const gameHeight = this.scene.scale.height;
@@ -282,45 +309,46 @@ export class FoodTutorialManager {
         ).setOrigin(0.5);
 
         // Create continue button with rounded corners
-        const buttonWidth = 120;
-        const buttonHeight = 40;
-        const buttonRadius = 20;
+        const buttonWidth = 160; // Increased for better touch targets
+        const buttonHeight = 60; // Increased for better touch targets
+        const buttonRadius = 30;
+        const buttonX = gameWidth / 2;
+        const buttonY = gameHeight / 2 + 100;
+        
+        console.log('Button position:', buttonX, buttonY);
+        console.log('Button dimensions:', buttonWidth, 'x', buttonHeight);
         
         // Create button background with rounded corners
         const buttonBg = this.scene.add.graphics();
         buttonBg.fillStyle(tutorial.color, 1);
         buttonBg.fillRoundedRect(
-            gameWidth / 2 - buttonWidth / 2,
-            gameHeight / 2 + 100 - buttonHeight / 2,
+            -buttonWidth / 2,
+            -buttonHeight / 2,
             buttonWidth,
             buttonHeight,
             buttonRadius
         );
         buttonBg.lineStyle(2, 0xffffff, 1);
         buttonBg.strokeRoundedRect(
-            gameWidth / 2 - buttonWidth / 2,
-            gameHeight / 2 + 100 - buttonHeight / 2,
+            -buttonWidth / 2,
+            -buttonHeight / 2,
             buttonWidth,
             buttonHeight,
             buttonRadius
         );
 
         const buttonText = this.scene.add.text(
-            gameWidth / 2,
-            gameHeight / 2 + 100,
+            0,
+            0,
             'Continue',
             {
-                fontSize: '16px',
+                fontSize: '18px', // Slightly larger font
                 color: '#ffffff',
                 fontFamily: 'Arial',
                 fontStyle: 'bold'
             }
         ).setOrigin(0.5);
 
-        // Make button interactive
-        buttonBg.setInteractive();
-        buttonText.setInteractive(); // Add text interactivity
-        
         // Define click handler function
         const handleButtonClick = () => {
             console.log('Tutorial button clicked, currentTutorialIndex:', this.currentTutorialIndex);
@@ -340,15 +368,51 @@ export class FoodTutorialManager {
             }
         };
 
-        // Button background events
-        buttonBg.on('pointerup', () => {
-            console.log('Tutorial button background clicked');
+        // Create a single interactive button container that contains both background and text
+        const buttonContainer = this.scene.add.container(buttonX, buttonY, [buttonBg, buttonText]);
+        
+        // Make only the container interactive with larger hit area for better touch targets
+        const hitAreaPadding = 20; // Extra padding around the button for easier clicking
+        const hitAreaWidth = buttonWidth + hitAreaPadding * 2;
+        const hitAreaHeight = buttonHeight + hitAreaPadding * 2;
+        buttonContainer.setInteractive(new Phaser.Geom.Rectangle(-hitAreaWidth/2, -hitAreaHeight/2, hitAreaWidth, hitAreaHeight), Phaser.Geom.Rectangle.Contains);
+        
+        // Add events to the container with multiple event types for better compatibility
+        buttonContainer.on('pointerdown', () => {
+            console.log('Tutorial button container pointerdown');
+            // Add visual feedback - scale down slightly
+            buttonContainer.setScale(0.95);
+        });
+        
+        buttonContainer.on('pointerup', () => {
+            console.log('Tutorial button container pointerup');
+            // Restore scale
+            buttonContainer.setScale(1);
             handleButtonClick();
         });
-
-        // Button text events
-        buttonText.on('pointerup', () => {
-            console.log('Tutorial button text clicked');
+        
+        // Add additional event types for better mobile compatibility
+        buttonContainer.on('pointerover', () => {
+            console.log('Tutorial button container pointerover');
+            // Optional: Add hover effect - scale up slightly
+            buttonContainer.setScale(1.05);
+        });
+        
+        buttonContainer.on('pointerout', () => {
+            console.log('Tutorial button container pointerout');
+            // Remove hover effect
+            buttonContainer.setScale(1);
+        });
+        
+        // Add touch events for mobile devices
+        buttonContainer.on('touchstart', () => {
+            console.log('Tutorial button container touchstart');
+            buttonContainer.setScale(0.95);
+        });
+        
+        buttonContainer.on('touchend', () => {
+            console.log('Tutorial button container touchend');
+            buttonContainer.setScale(1);
             handleButtonClick();
         });
 
@@ -360,8 +424,7 @@ export class FoodTutorialManager {
             title,
             description,
             effect,
-            buttonBg,
-            buttonText
+            buttonContainer
         ]);
 
         // Add entrance animation
@@ -448,5 +511,15 @@ export class FoodTutorialManager {
 
     public destroy(): void {
         this.hideTutorial();
+        
+        // Clean up any global event listeners
+        try {
+            document.removeEventListener('touchstart', this.preventTouchInterference);
+            document.removeEventListener('touchend', this.preventTouchInterference);
+            document.removeEventListener('mousedown', this.preventTouchInterference);
+            document.removeEventListener('mouseup', this.preventTouchInterference);
+        } catch (error) {
+            console.warn('Failed to clean up tutorial event listeners:', error);
+        }
     }
 } 

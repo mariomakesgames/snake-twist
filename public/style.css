@@ -15,6 +15,35 @@ body {
     color: white;
 }
 
+/* 竖屏时内容靠顶部显示 */
+@media (max-width: 768px) and (orientation: portrait) {
+    body {
+        justify-content: flex-start;
+        padding-top: 20px;
+    }
+}
+
+/* 当屏幕宽度小于高度时（类似竖屏）也应用相同样式 */
+@media (max-width: 768px) and (max-aspect-ratio: 1/1) {
+    body {
+        justify-content: flex-start;
+        padding-top: 20px;
+    }
+}
+
+/* 针对更小的屏幕进一步优化 */
+@media (max-width: 480px) {
+    body {
+        padding-top: 10px;
+    }
+    
+    .game-container {
+        margin-top: 5px;
+        margin-bottom: 15px;
+        padding: 15px;
+    }
+}
+
 .game-container {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 20px;
@@ -176,6 +205,12 @@ h1 {
         padding: 20px;
         margin: 10px;
         border-radius: 15px;
+    }
+    
+    /* 竖屏时调整容器边距 */
+    .game-container {
+        margin-top: 10px;
+        margin-bottom: 20px;
     }
 
     .header-row {
