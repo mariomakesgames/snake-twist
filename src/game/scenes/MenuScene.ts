@@ -58,7 +58,8 @@ export class MenuScene extends Phaser.Scene {
             fontSize: '18px',
             color: '#e3f2fd',
             fontFamily: 'Arial, sans-serif',
-            align: 'center',
+            align: 'left',
+            lineSpacing: 8,
             wordWrap: { width: 420, useAdvancedWrap: true },
             padding: { top: 10, bottom: 10 }
         }).setOrigin(0.5, 0);
@@ -71,7 +72,7 @@ export class MenuScene extends Phaser.Scene {
     }
 
     private createObstacleToggleButton(x: number, y: number): void {
-        const buttonWidth = 300;
+        const buttonWidth = 280;
         const buttonHeight = 50;
         const borderRadius = 25;
 

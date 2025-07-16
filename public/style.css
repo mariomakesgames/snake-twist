@@ -226,6 +226,38 @@ h1 {
     }
 }
 
+/* Portrait orientation (width < height) - keep score display in one row */
+@media (max-width: 768px) and (orientation: portrait) {
+    .score-display {
+        flex-direction: row;
+        gap: 15px;
+        justify-content: center;
+    }
+
+    .score-item {
+        padding: 6px 12px;
+        font-size: 0.9em;
+        min-width: 80px;
+        text-align: center;
+    }
+}
+
+/* Alternative: When screen width is less than height (portrait-like) */
+@media (max-width: 768px) and (max-aspect-ratio: 1/1) {
+    .score-display {
+        flex-direction: row;
+        gap: 15px;
+        justify-content: center;
+    }
+
+    .score-item {
+        padding: 6px 12px;
+        font-size: 0.9em;
+        min-width: 80px;
+        text-align: center;
+    }
+}
+
 /* Touch device optimizations */
 @media (hover: none) and (pointer: coarse) {
     .btn {
