@@ -144,13 +144,6 @@ export class FoodTutorialManager {
                     console.log('Mobile input manager disabled for tutorial');
                 }
             }
-            
-            // Also disable any global touch events that might interfere
-            // This is a safety measure to ensure tutorial buttons work properly
-            document.addEventListener('touchstart', this.preventTouchInterference, { passive: false });
-            document.addEventListener('touchend', this.preventTouchInterference, { passive: false });
-            document.addEventListener('mousedown', this.preventTouchInterference, { passive: false });
-            document.addEventListener('mouseup', this.preventTouchInterference, { passive: false });
         } catch (error) {
             console.warn('Failed to disable mobile input manager:', error);
         }
@@ -167,27 +160,12 @@ export class FoodTutorialManager {
                     console.log('Mobile input manager enabled after tutorial');
                 }
             }
-            
-            // Remove the global event listeners that were added to prevent interference
-            document.removeEventListener('touchstart', this.preventTouchInterference);
-            document.removeEventListener('touchend', this.preventTouchInterference);
-            document.removeEventListener('mousedown', this.preventTouchInterference);
-            document.removeEventListener('mouseup', this.preventTouchInterference);
         } catch (error) {
             console.warn('Failed to enable mobile input manager:', error);
         }
     }
 
-    private preventTouchInterference = (event: Event): void => {
-        // This method prevents global touch/mouse events from interfering with tutorial buttons
-        // It's used as a safety measure when tutorials are active
-        const target = event.target as HTMLElement;
-        if (target && target.closest('#gameCanvas')) {
-            // Only prevent default if the event is within the game canvas
-            // This allows tutorial buttons to work while preventing other interference
-            event.stopPropagation();
-        }
-    };
+
 
     public showAllTutorials(): void {
         if (this.isShowingTutorial) return;
@@ -337,13 +315,16 @@ export class FoodTutorialManager {
             buttonRadius
         );
 
+        // Determine text color based on background color for better contrast
+        const textColor = tutorial.color === 0xffff00 ? '#000000' : '#ffffff';
+        
         const buttonText = this.scene.add.text(
             0,
             0,
             'Continue',
             {
                 fontSize: '18px', // Slightly larger font
-                color: '#ffffff',
+                color: textColor,
                 fontFamily: 'Arial',
                 fontStyle: 'bold'
             }
@@ -511,15 +492,5 @@ export class FoodTutorialManager {
 
     public destroy(): void {
         this.hideTutorial();
-        
-        // Clean up any global event listeners
-        try {
-            document.removeEventListener('touchstart', this.preventTouchInterference);
-            document.removeEventListener('touchend', this.preventTouchInterference);
-            document.removeEventListener('mousedown', this.preventTouchInterference);
-            document.removeEventListener('mouseup', this.preventTouchInterference);
-        } catch (error) {
-            console.warn('Failed to clean up tutorial event listeners:', error);
-        }
     }
 } 
