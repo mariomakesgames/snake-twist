@@ -48,15 +48,12 @@ export class SwipeInputManager {
     private handleGlobalMouseDown = (event: MouseEvent): void => {
         if (this.isTracking) return; // Already tracking, ignore
         
-        // Check if the click is within the canvas bounds
+        // Allow swiping to start anywhere on the screen
+        // Convert global coordinates to canvas coordinates for consistency
         const canvas = this.scene.game.canvas;
         const rect = canvas.getBoundingClientRect();
         
-        if (event.clientX >= rect.left && event.clientX <= rect.right &&
-            event.clientY >= rect.top && event.clientY <= rect.bottom) {
-            
-            this.startSwipe(event.clientX - rect.left, event.clientY - rect.top);
-        }
+        this.startSwipe(event.clientX - rect.left, event.clientY - rect.top);
     };
 
     private handleGlobalMouseUp = (event: MouseEvent): void => {
@@ -72,16 +69,13 @@ export class SwipeInputManager {
     private handleGlobalTouchStart = (event: TouchEvent): void => {
         if (this.isTracking) return; // Already tracking, ignore
         
-        // Check if the touch is within the canvas bounds
+        // Allow swiping to start anywhere on the screen
+        // Convert global coordinates to canvas coordinates for consistency
         const canvas = this.scene.game.canvas;
         const rect = canvas.getBoundingClientRect();
         const touch = event.touches[0];
         
-        if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
-            touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
-            
-            this.startSwipe(touch.clientX - rect.left, touch.clientY - rect.top);
-        }
+        this.startSwipe(touch.clientX - rect.left, touch.clientY - rect.top);
     };
 
     private handleGlobalTouchEnd = (event: TouchEvent): void => {
