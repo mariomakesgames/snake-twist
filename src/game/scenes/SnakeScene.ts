@@ -97,6 +97,11 @@ export class SnakeScene extends Phaser.Scene {
         const centerY = Math.floor(this.gameHeight / this.gridSize / 2) * this.gridSize + this.gridSize / 2;
         this.snake = new Snake(this, centerX, centerY);
         
+        // Setup obstacle collisions with snake after snake is created
+        if (this.obstacleManager) {
+            this.obstacleManager.setupCollisionsWithSnake();
+        }
+        
         // Create regular food (after obstacles)
         this.food = new Food(this);
         
@@ -217,7 +222,7 @@ export class SnakeScene extends Phaser.Scene {
         return { x: centerX, y: centerY };
     }
 
-    private isPositionOccupied(x: number, y: number): boolean {
+    public isPositionOccupied(x: number, y: number): boolean {
         if (!this.obstacleManager) return false;
         
         const obstacles = this.obstacleManager.getObstacles();

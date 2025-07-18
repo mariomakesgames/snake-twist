@@ -70,9 +70,15 @@ export class ObstacleManager {
 
     private setupCollisions(): void {
         const snake = (this.scene as any).snake;
-        if (!snake || !snake.head) return;
+        if (!snake || !snake.head) {
+            console.warn('Cannot setup obstacle collisions: snake or snake head not found');
+            return;
+        }
         
-        this.obstacles.forEach(obstacle => {
+        console.log(`Setting up collisions for ${this.obstacles.length} obstacles with snake head at (${snake.head.x}, ${snake.head.y})`);
+        
+        this.obstacles.forEach((obstacle, index) => {
+            console.log(`Setting up collision for obstacle ${index} at (${obstacle.x}, ${obstacle.y})`);
             this.scene.physics.add.overlap(
                 snake.head, 
                 obstacle.sprite, 
@@ -84,6 +90,13 @@ export class ObstacleManager {
                 this.scene
             );
         });
+        
+        console.log('Obstacle collision setup complete');
+    }
+
+    public setupCollisionsWithSnake(): void {
+        console.log('Setting up obstacle collisions with snake...');
+        this.setupCollisions();
     }
 
     public clearObstacles(): void {

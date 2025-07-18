@@ -35,6 +35,7 @@ export class Snake {
         headBody.onWorldBounds = true;
         this.body.push(this.head);
         console.log('Snake head created at:', this.head.x, this.head.y);
+        console.log('Snake head physics body:', headBody);
         
         // Create initial body segments - align to grid
         for (let i = 1; i < 3; i++) {
@@ -58,7 +59,7 @@ export class Snake {
         const margin = 2; // Keep some distance from edges
         
         // Try center position first
-        if (!this.isPositionOccupied(centerX, centerY)) {
+        if (!(this.scene as any).isPositionOccupied(centerX, centerY)) {
             return { x: centerX, y: centerY };
         }
         
@@ -72,7 +73,7 @@ export class Snake {
                 if (x >= margin * gridSize && x < this.scene.scale.width - margin * gridSize &&
                     y >= margin * gridSize && y < this.scene.scale.height - margin * gridSize) {
                     
-                    if (!this.isPositionOccupied(x, y)) {
+                    if (!(this.scene as any).isPositionOccupied(x, y)) {
                         return { x, y };
                     }
                 }
@@ -84,22 +85,7 @@ export class Snake {
         return { x: centerX, y: centerY };
     }
 
-    private isPositionOccupied(x: number, y: number): boolean {
-        const gridSize = (this.scene as any).gridSize || 20;
-        const tolerance = gridSize / 2;
-        
-        // Check obstacles
-        const obstacles = (this.scene as any).obstacles;
-        if (obstacles) {
-            for (const obstacle of obstacles) {
-                if (Math.abs(obstacle.x - x) < tolerance && Math.abs(obstacle.y - y) < tolerance) {
-                    return true;
-                }
-            }
-        }
-        
-        return false;
-    }
+
 
     /**
      * Setup input handling using SwipeInputManager
@@ -187,12 +173,8 @@ export class Snake {
             return;
         }
         
-        // Check for obstacle collision
-        if (this.isPositionOccupied(newHeadX, newHeadY)) {
-            console.log('Obstacle collision detected!');
-            (this.scene as any).gameOver();
-            return;
-        }
+        // Note: Obstacle collision is handled by Phaser physics in ObstacleManager
+        // No need for manual collision detection here
         
         // Move head
         this.head.x = newHeadX;

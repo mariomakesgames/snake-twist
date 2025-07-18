@@ -40,12 +40,6 @@ export class Food {
     }
 
     protected isOnObstacle(x: number, y: number): boolean {
-        const obstacleManager = (this.scene as any).obstacleManager;
-        if (!obstacleManager) return false;
-        
-        const obstacles = obstacleManager.getObstacles();
-        return obstacles.some((obstacle: any) => 
-            Math.abs(obstacle.x - x) < 15 && Math.abs(obstacle.y - y) < 15
-        );
+        return (this.scene as any).isPositionOccupied(x, y);
     }
 } 
