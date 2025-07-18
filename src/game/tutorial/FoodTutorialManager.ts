@@ -1,3 +1,6 @@
+
+import { UIHelper } from '../utils/UIHelper';
+
 export interface FoodTutorial {
     id: string;
     name: string;
@@ -205,133 +208,72 @@ export class FoodTutorialManager {
         const gameHeight = this.scene.scale.height;
 
         // Create semi-transparent background
-        const background = this.scene.add.rectangle(
-            gameWidth / 2,
-            gameHeight / 2,
-            gameWidth,
-            gameHeight,
-            0x000000,
-            0.7
-        );
+        const background = UIHelper.createOverlay(this.scene, 0x000000, 0.7);
 
         // Create tutorial card with rounded corners
         const cardWidth = 400;
         const cardHeight = 300;
-        const borderRadius = 20;
         
         // Create card background with rounded corners
-        const cardBg = this.scene.add.graphics();
-        cardBg.fillStyle(0x333333, 1);
-        cardBg.fillRoundedRect(
-            gameWidth / 2 - cardWidth / 2,
-            gameHeight / 2 - cardHeight / 2,
-            cardWidth,
-            cardHeight,
-            borderRadius
-        );
-        cardBg.lineStyle(3, tutorial.color, 1);
-        cardBg.strokeRoundedRect(
-            gameWidth / 2 - cardWidth / 2,
-            gameHeight / 2 - cardHeight / 2,
-            cardWidth,
-            cardHeight,
-            borderRadius
-        );
+        const cardBg = UIHelper.createPanel(this.scene, {
+            x: gameWidth / 2,
+            y: gameHeight / 2,
+            width: cardWidth,
+            height: cardHeight,
+            fillColor: 0x333333,
+            borderColor: tutorial.color,
+            borderWidth: 3,
+            borderRadius: 20
+        });
 
         // Create icon
-        const icon = this.scene.add.text(
-            gameWidth / 2,
-            gameHeight / 2 - 80,
-            tutorial.icon,
-            {
-                fontSize: '48px',
-                color: '#ffffff'
-            }
-        ).setOrigin(0.5);
+        const icon = UIHelper.createText(this.scene, {
+            x: gameWidth / 2,
+            y: gameHeight / 2 - 80,
+            text: tutorial.icon,
+            fontSize: '48px',
+            color: '#ffffff'
+        });
 
         // Create title
-        const title = this.scene.add.text(
-            gameWidth / 2,
-            gameHeight / 2 - 30,
-            tutorial.name,
-            {
-                fontSize: '24px',
-                color: '#ffffff',
-                fontFamily: 'Arial',
-                fontStyle: 'bold'
-            }
-        ).setOrigin(0.5);
+        const title = UIHelper.createText(this.scene, {
+            x: gameWidth / 2,
+            y: gameHeight / 2 - 30,
+            text: tutorial.name,
+            fontSize: '24px',
+            color: '#ffffff',
+            fontStyle: 'bold'
+        });
 
         // Create description
-        const description = this.scene.add.text(
-            gameWidth / 2,
-            gameHeight / 2 + 10,
-            tutorial.description,
-            {
-                fontSize: '16px',
-                color: '#cccccc',
-                fontFamily: 'Arial',
-                wordWrap: { width: cardWidth - 40 }
-            }
-        ).setOrigin(0.5);
+        const description = UIHelper.createText(this.scene, {
+            x: gameWidth / 2,
+            y: gameHeight / 2 + 10,
+            text: tutorial.description,
+            fontSize: '16px',
+            color: '#cccccc',
+            wordWrap: { width: cardWidth - 40 }
+        });
 
         // Create effect text
-        const effect = this.scene.add.text(
-            gameWidth / 2,
-            gameHeight / 2 + 50,
-            tutorial.effect,
-            {
-                fontSize: '18px',
-                color: `#${tutorial.color.toString(16)}`,
-                fontFamily: 'Arial',
-                fontStyle: 'bold'
-            }
-        ).setOrigin(0.5);
+        const effect = UIHelper.createText(this.scene, {
+            x: gameWidth / 2,
+            y: gameHeight / 2 + 50,
+            text: tutorial.effect,
+            fontSize: '18px',
+            color: `#${tutorial.color.toString(16)}`,
+            fontStyle: 'bold'
+        });
 
-        // Create continue button with rounded corners
-        const buttonWidth = 160; // Increased for better touch targets
-        const buttonHeight = 60; // Increased for better touch targets
-        const buttonRadius = 30;
+        // Create continue button
         const buttonX = gameWidth / 2;
         const buttonY = gameHeight / 2 + 100;
         
         console.log('Button position:', buttonX, buttonY);
-        console.log('Button dimensions:', buttonWidth, 'x', buttonHeight);
         
-        // Create button background with rounded corners
-        const buttonBg = this.scene.add.graphics();
-        buttonBg.fillStyle(tutorial.color, 1);
-        buttonBg.fillRoundedRect(
-            -buttonWidth / 2,
-            -buttonHeight / 2,
-            buttonWidth,
-            buttonHeight,
-            buttonRadius
-        );
-        buttonBg.lineStyle(2, 0xffffff, 1);
-        buttonBg.strokeRoundedRect(
-            -buttonWidth / 2,
-            -buttonHeight / 2,
-            buttonWidth,
-            buttonHeight,
-            buttonRadius
-        );
-
         // Determine text color based on background color for better contrast
         const textColor = tutorial.color === 0xffff00 ? '#000000' : '#ffffff';
         
-        const buttonText = this.scene.add.text(
-            0,
-            0,
-            'Continue',
-            {
-                fontSize: '18px', // Slightly larger font
-                color: textColor,
-                fontFamily: 'Arial',
-                fontStyle: 'bold'
-            }
-        ).setOrigin(0.5);
-
         // Define click handler function
         const handleButtonClick = () => {
             console.log('Tutorial button clicked, currentTutorialIndex:', this.currentTutorialIndex);
@@ -351,52 +293,21 @@ export class FoodTutorialManager {
             }
         };
 
-        // Create a single interactive button container that contains both background and text
-        const buttonContainer = this.scene.add.container(buttonX, buttonY, [buttonBg, buttonText]);
-        
-        // Make only the container interactive with larger hit area for better touch targets
-        const hitAreaPadding = 20; // Extra padding around the button for easier clicking
-        const hitAreaWidth = buttonWidth + hitAreaPadding * 2;
-        const hitAreaHeight = buttonHeight + hitAreaPadding * 2;
-        buttonContainer.setInteractive(new Phaser.Geom.Rectangle(-hitAreaWidth/2, -hitAreaHeight/2, hitAreaWidth, hitAreaHeight), Phaser.Geom.Rectangle.Contains);
-        
-        // Add events to the container with multiple event types for better compatibility
-        buttonContainer.on('pointerdown', () => {
-            console.log('Tutorial button container pointerdown');
-            // Add visual feedback - scale down slightly
-            buttonContainer.setScale(0.95);
-        });
-        
-        buttonContainer.on('pointerup', () => {
-            console.log('Tutorial button container pointerup');
-            // Restore scale
-            buttonContainer.setScale(1);
-            handleButtonClick();
-        });
-        
-        // Add additional event types for better mobile compatibility
-        buttonContainer.on('pointerover', () => {
-            console.log('Tutorial button container pointerover');
-            // Optional: Add hover effect - scale up slightly
-            buttonContainer.setScale(1.05);
-        });
-        
-        buttonContainer.on('pointerout', () => {
-            console.log('Tutorial button container pointerout');
-            // Remove hover effect
-            buttonContainer.setScale(1);
-        });
-        
-        // Add touch events for mobile devices
-        buttonContainer.on('touchstart', () => {
-            console.log('Tutorial button container touchstart');
-            buttonContainer.setScale(0.95);
-        });
-        
-        buttonContainer.on('touchend', () => {
-            console.log('Tutorial button container touchend');
-            buttonContainer.setScale(1);
-            handleButtonClick();
+        // Create button using UIHelper
+        const buttonContainer = UIHelper.createButton(this.scene, {
+            x: buttonX,
+            y: buttonY,
+            width: 160,
+            height: 60,
+            text: 'Continue',
+            fontSize: '18px',
+            colors: {
+                fill: [tutorial.color, tutorial.color, tutorial.color, tutorial.color],
+                border: 0xffffff,
+                text: textColor
+            },
+            onClick: handleButtonClick,
+            borderRadius: 30
         });
 
         // Create container

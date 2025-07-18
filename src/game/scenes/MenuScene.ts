@@ -1,5 +1,6 @@
 import { EventBus } from '../EventBus';
 import { GameSettingsManager } from '../GameSettings';
+import { UIHelper } from '../utils/UIHelper';
 
 export class MenuScene extends Phaser.Scene {
     private startButton!: Phaser.GameObjects.Container;
@@ -26,19 +27,23 @@ export class MenuScene extends Phaser.Scene {
         this.add.rectangle(0, 0, this.cameras.main.width, this.cameras.main.height, 0x222222).setOrigin(0, 0);
 
         // Create title
-        this.titleText = this.add.text(centerX, centerY - 150, '🐍 SNAKE GAME', {
+        this.titleText = UIHelper.createText(this, {
+            x: centerX,
+            y: centerY - 150,
+            text: '🐍 SNAKE GAME',
             fontSize: '48px',
             color: '#2196F3',
-            fontFamily: 'Arial',
             fontStyle: 'bold'
-        }).setOrigin(0.5);
+        });
 
         // Create subtitle
-        this.subtitleText = this.add.text(centerX, centerY - 100, 'Eat food, grow longer, don\'t crash!', {
+        this.subtitleText = UIHelper.createText(this, {
+            x: centerX,
+            y: centerY - 100,
+            text: 'Eat food, grow longer, don\'t crash!',
             fontSize: '18px',
-            color: '#ffffff',
-            fontFamily: 'Arial'
-        }).setOrigin(0.5);
+            color: '#ffffff'
+        });
 
         // Create start button
         this.createStartButton(centerX, centerY + 50);
@@ -54,15 +59,18 @@ export class MenuScene extends Phaser.Scene {
             '📺 Revive: Can pick up dropped segments.',
             '🎯 Obstacle Mode: Higher score multiplier!'
         ];
-        const instructionsText = this.add.text(centerX, centerY + 200, instructions.join('\n'), {
+        const instructionsText = UIHelper.createText(this, {
+            x: centerX,
+            y: centerY + 200,
+            text: instructions.join('\n'),
             fontSize: '18px',
             color: '#e3f2fd',
-            fontFamily: 'Arial, sans-serif',
             align: 'left',
             lineSpacing: 8,
             wordWrap: { width: 420, useAdvancedWrap: true },
             padding: { top: 10, bottom: 10 }
-        }).setOrigin(0.5, 0);
+        });
+        instructionsText.setOrigin(0.5, 0);
 
         // Add entrance animations
         this.addEntranceAnimations();
@@ -165,55 +173,23 @@ export class MenuScene extends Phaser.Scene {
     }
 
     private createStartButton(x: number, y: number): void {
-        const buttonWidth = 250;
-        const buttonHeight = 70;
-        const borderRadius = 35;
-
-        // Create button background with modern gradient
-        const background = this.add.graphics();
-        background.fillGradientStyle(0x2196F3, 0x1976D2, 0x1565C0, 0x0D47A1, 1);
-        background.fillRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, borderRadius);
-        
-        // Add border with gradient
-        background.lineStyle(3, 0x42A5F5, 1);
-        background.strokeRoundedRect(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight, borderRadius);
-
-        // Create button text with better styling
-        const text = this.add.text(0, 0, 'START GAME', {
+        this.startButton = UIHelper.createButton(this, {
+            x,
+            y,
+            width: 250,
+            height: 70,
+            text: 'START GAME',
             fontSize: '28px',
-            color: '#FFFFFF',
-            fontFamily: 'Arial, sans-serif',
-            fontStyle: 'bold',
-            stroke: '#0D47A1',
-            strokeThickness: 1
-        }).setOrigin(0.5);
-
-        // Create container with all elements
-        this.startButton = this.add.container(x, y, [background, text]);
-        this.startButton.setActive(true).setVisible(true);
-
-        // Make the background interactive
-        background.setInteractive(new Phaser.Geom.Rectangle(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
-
-        // Hover effects removed
-
-        // Add click effect
-        background.on('pointerdown', () => {
-            // Remove scale effect, keep only click functionality
-        });
-
-        // Add click handler
-        background.on('pointerup', () => {
-            this.startGame();
-        });
-        
-        // Also make text interactive
-        text.setInteractive(new Phaser.Geom.Rectangle(-buttonWidth/2, -buttonHeight/2, buttonWidth, buttonHeight), Phaser.Geom.Rectangle.Contains);
-        text.on('pointerdown', () => {
-            // Remove scale effect, keep only click functionality
-        });
-        text.on('pointerup', () => {
-            this.startGame();
+            colors: {
+                fill: [0x2196F3, 0x1976D2, 0x1565C0, 0x0D47A1],
+                border: 0x42A5F5,
+                text: '#FFFFFF',
+                stroke: '#0D47A1'
+            },
+            onClick: () => {
+                this.startGame();
+            },
+            borderRadius: 35
         });
     }
 
