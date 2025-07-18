@@ -3,8 +3,6 @@
     width: 100% !important;
     max-width: 600px !important;
     height: auto !important;
-    aspect-ratio: 3/4 !important;
-    min-height: 400px !important;
     border: 3px solid rgba(255, 255, 255, 0.3);
     border-radius: 10px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
@@ -55,10 +53,10 @@
 /* Small screen phones */
 @media (max-width: 480px) {
     #gameCanvas {
-        min-height: 200px !important;
+        max-width: 350px !important;
         border-width: 1px;
         border-radius: 6px;
-        margin: 0 5px;
+        margin: 0 10px;
     }
     
     #gameCanvas canvas {
@@ -69,8 +67,9 @@
 /* Extra small screens */
 @media (max-width: 320px) {
     #gameCanvas {
-        min-height: 180px !important;
+        max-width: 280px !important;
         border-radius: 4px;
+        margin: 0 5px;
     }
     
     #gameCanvas canvas {
@@ -78,12 +77,7 @@
     }
 }
 
-/* Prevent canvas from being affected by other styles */
-#gameCanvas * {
-    box-sizing: border-box;
-}
-
-/* Ensure game container is adaptive */
+/* Game container */
 .game-container {
     width: 100%;
     max-width: 800px;
@@ -94,13 +88,11 @@
 @media (max-width: 768px) {
     .game-container {
         padding: 15px;
-        margin: 0 10px;
     }
 }
 
 @media (max-width: 480px) {
     .game-container {
         padding: 10px;
-        margin: 0 5px;
     }
 } 
