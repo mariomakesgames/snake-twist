@@ -1,7 +1,6 @@
 # Snake Twist - Enhanced Snake Game
+This game takes the classic snake concept and adds exciting new mechanics including portals, obstacles, special food types, mobile support, and segment drops — when the snake dies, body segments scatter as collectible drops, adding incentive to watch an ad and revive.
 
-A modern, feature-rich snake game built with Phaser 3, React, and TypeScript. This game takes the classic snake concept and adds exciting new mechanics including portals, obstacles, special food types, and mobile support.
- 
 ## 🎮 Game Features
 
 #### 🍎 Multi-Type Food System
