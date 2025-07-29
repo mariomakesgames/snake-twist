@@ -78,8 +78,9 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(function PhaserGame
         <div 
             id="gameCanvas" 
             style={{
-                width: '600px',
-                height: '800px',
+                width: '100%',
+                maxWidth: '600px',
+                height: 'auto',
                 margin: '0 auto',
                 display: 'flex',
                 justifyContent: 'center',

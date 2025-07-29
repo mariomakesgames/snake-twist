@@ -16,6 +16,7 @@ export class Obstacle {
         // Make obstacle static (immovable)
         const body = this.sprite.body as any;
         body.setImmovable(true);
+        // Makes a physics body static/immovable. Prevents the obstacle from being moved or affected by physics forces (like gravity, collisions, etc.)
     }
 
     public destroy(): void {
