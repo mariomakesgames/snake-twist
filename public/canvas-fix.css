@@ -1,8 +1,14 @@
+.game-container {
+    max-height: 100vh;
+}
+
 /* Canvas adaptive size */
 #gameCanvas {
     width: 100% !important;
     max-width: 600px !important;
     height: auto !important;
+    max-height: calc(100vh - 110px);
+    aspect-ratio: 3/4;
     border: 3px solid rgba(255, 255, 255, 0.3);
     border-radius: 10px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
