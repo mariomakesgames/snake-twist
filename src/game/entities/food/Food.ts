@@ -1,5 +1,5 @@
 
-export class Food {
+export abstract class Food {
     protected scene: Phaser.Scene;
     public sprite: Phaser.GameObjects.Rectangle;
 
@@ -12,6 +12,9 @@ export class Food {
         this.reposition();
         console.log('Food created at:', this.sprite.x, this.sprite.y);
     }
+
+    // Abstract method that each food type must implement
+    public abstract onEaten(): void;
 
     public reposition(): void {
         const gridSize = (this.scene as any).gridSize || 20;
