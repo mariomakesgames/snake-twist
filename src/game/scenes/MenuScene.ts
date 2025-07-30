@@ -39,7 +39,7 @@ export class MenuScene extends Phaser.Scene {
         // Create title
         this.titleText = UIHelper.createText(this, {
             x: centerX,
-            y: centerY - 150,
+            y: centerY - 200,
             text: '🐍 SNAKE GAME',
             fontSize: '48px',
             color: '#2196F3',
@@ -49,23 +49,23 @@ export class MenuScene extends Phaser.Scene {
         // Create subtitle
         this.subtitleText = UIHelper.createText(this, {
             x: centerX,
-            y: centerY - 100,
+            y: centerY - 150,
             text: 'Eat food, grow longer, don\'t crash!',
             fontSize: '18px',
             color: '#ffffff'
         });
 
         // Create start button
-        this.createStartButton(centerX, centerY + 50);
+        this.createStartButton(centerX, centerY);
 
         // Create obstacle mode toggle button
-        this.createObstacleToggleButton(centerX, centerY + 120);
+        this.createObstacleToggleButton(centerX, centerY + 70);
 
         // Create level mode toggle button
-        this.createLevelToggleButton(centerX, centerY + 170);
+        this.createLevelToggleButton(centerX, centerY + 120);
 
         // Create level selector (initially hidden)
-        this.createLevelSelectButton(centerX, centerY + 220);
+        this.createLevelSelectButton(centerX, centerY + 170);
 
         // Add game instructions below the toggle buttons
         const instructions = [
@@ -78,7 +78,7 @@ export class MenuScene extends Phaser.Scene {
         ];
         const instructionsText = UIHelper.createText(this, {
             x: centerX,
-            y: centerY + 280,
+            y: centerY + 230,
             text: instructions.join('\n'),
             fontSize: '16px',
             color: '#e3f2fd',
