@@ -4,7 +4,9 @@ import { Food } from '../entities/food/Food';
 import { GrowthBoostFood } from '../entities/food/good/GrowthBoostFood';
 import { SpeedBoostFood } from '../entities/food/good/SpeedBoostFood';
 import { PortalManager } from '../entities/items/special/portal/PortalManager';
+import { LevelLoader } from '../entities/levels/LevelLoader';
 import { ObstacleManager } from '../entities/obstacles/ObstacleManager';
+import { TilemapObstacleManager } from '../entities/obstacles/TilemapObstacleManager';
 import { ScoreIndicator } from '../entities/ScoreIndicator';
 import { SegmentDrop } from '../entities/SegmentDrop';
 import { Snake } from '../entities/Snake';
@@ -24,7 +26,8 @@ export class SnakeScene extends Phaser.Scene {
     public speedBoostFood!: SpeedBoostFood;
     public slowFood!: SlowFood;
     public portalManager!: PortalManager;
-    public obstacleManager!: ObstacleManager;
+    public obstacleManager: ObstacleManager | null = null;
+    public tilemapObstacleManager: TilemapObstacleManager | null = null;
     public gameSpeed: number;
     private gridSize: number;
     private gameWidth: number;
@@ -58,7 +61,7 @@ export class SnakeScene extends Phaser.Scene {
         // No image loading needed - we'll use graphics
     }
 
-    public create(): void {
+    public async create(): Promise<void> {
         console.log('SnakeScene create() called');
         console.log('Game dimensions:', this.gameWidth, 'x', this.gameHeight);
         
@@ -74,23 +77,8 @@ export class SnakeScene extends Phaser.Scene {
         // Create portal manager
         this.portalManager = new PortalManager(this);
         
-        // Create obstacle manager and handle obstacles based on revival state
-        this.obstacleManager = new ObstacleManager(this);
-        
-        // Only handle obstacles if obstacle mode is enabled
-        if (this.settingsManager.isObstacleModeEnabled()) {
-            if (gameState && gameState.isReviving && gameState.savedObstaclePositions) {
-                // Restore saved obstacles during revival
-                console.log('🔄 Revival mode - restoring saved obstacles');
-                this.obstacleManager.restoreObstacles();
-            } else {
-                // Generate new obstacles for new game
-                console.log('🎯 Obstacle mode enabled - generating new obstacles');
-                this.obstacleManager.generateObstacles();
-            }
-        } else {
-            console.log('⚪ Obstacle mode disabled - no obstacles generated');
-        }
+        // Handle obstacles based on current mode
+        await this.setupObstacles(gameState);
         
         // Initialize snake at grid center (after obstacles)
         const centerX = Math.floor(this.gameWidth / this.gridSize / 2) * this.gridSize + this.gridSize / 2;
@@ -100,6 +88,9 @@ export class SnakeScene extends Phaser.Scene {
         // Setup obstacle collisions with snake after snake is created
         if (this.obstacleManager) {
             this.obstacleManager.setupCollisionsWithSnake();
+        }
+        if (this.tilemapObstacleManager) {
+            this.tilemapObstacleManager.setupCollisionsWithSnake();
         }
         
         // Create regular food (after obstacles)
@@ -223,10 +214,14 @@ export class SnakeScene extends Phaser.Scene {
     }
 
     public isPositionOccupied(x: number, y: number): boolean {
-        if (!this.obstacleManager) return false;
+        if (!this.obstacleManager && !this.tilemapObstacleManager) return false;
         
-        const obstacles = this.obstacleManager.getObstacles();
+        const obstacles = this.obstacleManager ? this.obstacleManager.getObstacles() : [];
+        const tilemapObstacles = this.tilemapObstacleManager ? this.tilemapObstacleManager.getObstacles() : [];
+
         return obstacles.some((obstacle: any) => 
+            Math.abs(obstacle.x - x) < 15 && Math.abs(obstacle.y - y) < 15
+        ) || tilemapObstacles.some((obstacle: any) => 
             Math.abs(obstacle.x - x) < 15 && Math.abs(obstacle.y - y) < 15
         );
     }
@@ -816,6 +811,9 @@ export class SnakeScene extends Phaser.Scene {
             if (this.obstacleManager) {
                 this.obstacleManager.saveObstacles();
             }
+            if (this.tilemapObstacleManager) {
+                this.tilemapObstacleManager.saveObstacles();
+            }
             
             // Switch to game over scene after a short delay
             this.time.delayedCall(1000, () => {
@@ -985,7 +983,10 @@ export class SnakeScene extends Phaser.Scene {
         const gameState = (window as any).gameState;
         if (gameState.isPaused || gameState.isGameOver) return;
         
-        this.snake.update(time);
+        // Add null check for snake
+        if (this.snake) {
+            this.snake.update(time);
+        }
     }
 
 
@@ -1112,6 +1113,56 @@ export class SnakeScene extends Phaser.Scene {
                     sparkle.destroy();
                 }
             });
+        }
+    }
+
+    private async setupObstacles(gameState: any): Promise<void> {
+        if (this.settingsManager.isObstacleModeEnabled()) {
+            // Create obstacle manager for dynamic obstacle mode
+            this.obstacleManager = new ObstacleManager(this);
+            this.tilemapObstacleManager = null;
+            
+            if (gameState && gameState.isReviving && gameState.savedObstaclePositions) {
+                // Restore saved obstacles during revival
+                console.log('🔄 Revival mode - restoring saved obstacles');
+                this.obstacleManager.restoreObstacles();
+            } else {
+                // Generate new obstacles for new game
+                console.log('🎯 Obstacle mode enabled - generating new obstacles');
+                this.obstacleManager.generateObstacles();
+            }
+        } else if (this.settingsManager.isLevelModeEnabled()) {
+            // Create tilemap obstacle manager for level mode
+            const selectedLevelFile = this.settingsManager.getSelectedLevelFile();
+            if (selectedLevelFile) {
+                console.log('📋 Level mode enabled - loading level:', selectedLevelFile);
+                this.tilemapObstacleManager = new TilemapObstacleManager(this);
+                this.obstacleManager = null;
+                
+                try {
+                    const levelData = await LevelLoader.loadLevel(selectedLevelFile);
+                    if (levelData) {
+                        await this.tilemapObstacleManager.loadLevelObstacles(levelData);
+                        console.log(`✅ Successfully loaded level: ${levelData.name}`);
+                    } else {
+                        console.error('❌ Failed to load level data');
+                        // Fall back to no obstacles
+                        this.tilemapObstacleManager = null;
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading level:', error);
+                    // Fall back to no obstacles
+                    this.tilemapObstacleManager = null;
+                }
+            } else {
+                console.warn('⚠️ Level mode enabled but no level selected');
+                this.obstacleManager = null;
+                this.tilemapObstacleManager = null;
+            }
+        } else {
+            console.log('⚪ No obstacle mode enabled');
+            this.obstacleManager = null;
+            this.tilemapObstacleManager = null;
         }
     }
 } 

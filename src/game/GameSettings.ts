@@ -1,6 +1,8 @@
 export interface GameSettings {
     obstacleMode: boolean;
     obstacleModeScoreMultiplier: number;
+    levelMode: boolean;
+    selectedLevelFile: string | null;
 }
 
 export class GameSettingsManager {
@@ -32,7 +34,9 @@ export class GameSettingsManager {
         // Default settings
         return {
             obstacleMode: false,
-            obstacleModeScoreMultiplier: 2.0 // 2x score multiplier in obstacle mode
+            obstacleModeScoreMultiplier: 2.0, // 2x score multiplier in obstacle mode
+            levelMode: false,
+            selectedLevelFile: null
         };
     }
 
@@ -50,6 +54,10 @@ export class GameSettingsManager {
 
     public setObstacleMode(enabled: boolean): void {
         this.settings.obstacleMode = enabled;
+        // If enabling obstacle mode, disable level mode
+        if (enabled) {
+            this.settings.levelMode = false;
+        }
         this.saveSettings();
     }
 
@@ -57,16 +65,45 @@ export class GameSettingsManager {
         return this.settings.obstacleMode;
     }
 
+    public setLevelMode(enabled: boolean): void {
+        this.settings.levelMode = enabled;
+        // If enabling level mode, disable obstacle mode
+        if (enabled) {
+            this.settings.obstacleMode = false;
+        }
+        this.saveSettings();
+    }
+
+    public isLevelModeEnabled(): boolean {
+        return this.settings.levelMode;
+    }
+
+    public setSelectedLevelFile(fileName: string | null): void {
+        this.settings.selectedLevelFile = fileName;
+        this.saveSettings();
+    }
+
+    public getSelectedLevelFile(): string | null {
+        return this.settings.selectedLevelFile;
+    }
+
     public getScoreMultiplier(): number {
-        const multiplier = this.settings.obstacleMode ? this.settings.obstacleModeScoreMultiplier : 1.0;
-        console.log(`Obstacle mode: ${this.settings.obstacleMode}, Multiplier: ${multiplier}`);
+        let multiplier = 1.0;
+        if (this.settings.obstacleMode) {
+            multiplier = this.settings.obstacleModeScoreMultiplier;
+        } else if (this.settings.levelMode) {
+            multiplier = 1.5; // Level mode gets 1.5x multiplier
+        }
+        console.log(`Obstacle mode: ${this.settings.obstacleMode}, Level mode: ${this.settings.levelMode}, Multiplier: ${multiplier}`);
         return multiplier;
     }
 
     public resetToDefaults(): void {
         this.settings = {
             obstacleMode: false,
-            obstacleModeScoreMultiplier: 2.0
+            obstacleModeScoreMultiplier: 2.0,
+            levelMode: false,
+            selectedLevelFile: null
         };
         this.saveSettings();
     }
