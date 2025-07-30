@@ -781,16 +781,8 @@ export class SnakeScene extends Phaser.Scene {
                 console.log('Saved snake length:', gameState.savedSnakeLength);
             }
             
-            // Create segment drops
+            // Create segment drops (they will persist in the scene)
             this.createSegmentDrops();
-            
-            // Store segment drops data for revival BEFORE destroying snake
-            gameState.segmentDropsData = this.segmentDrops.map(drop => ({
-                x: drop.sprite.x,
-                y: drop.sprite.y,
-                value: drop.value
-            }));
-            console.log('Saved segment drops data:', gameState.segmentDropsData);
             
             // Stop portal manager
             this.portalManager.stop();
@@ -817,13 +809,7 @@ export class SnakeScene extends Phaser.Scene {
             
             EventBus.emit('game-over', gameState.score);
             
-            // Save obstacles for revival
-            if (this.obstacleManager) {
-                this.obstacleManager.saveObstacles();
-            }
-            if (this.tilemapObstacleManager) {
-                this.tilemapObstacleManager.saveObstacles();
-            }
+            // No need to save obstacles since we're not switching scenes anymore
             
             // Show game over overlay instead of switching scene
             this.time.delayedCall(1000, () => {
@@ -882,29 +868,7 @@ export class SnakeScene extends Phaser.Scene {
         this.segmentDrops = [];
     }
     
-    private recreateSegmentDrops(): void {
-        const gameState = (window as any).gameState;
-        if (!gameState.segmentDropsData) return;
-        
-        console.log('Recreating segment drops from saved data');
-        
-        // Clear existing drops
-        this.clearSegmentDrops();
-        
-        // Recreate drops from saved data
-        gameState.segmentDropsData.forEach((dropData: any) => {
-            const segmentDrop = new SegmentDrop(this, dropData.x, dropData.y, dropData.value);
-            this.segmentDrops.push(segmentDrop);
-        });
-        
-        // Setup collision detection for the recreated segment drops
-        this.setupSegmentDropCollisions();
-        
-        // Clear the saved data
-        gameState.segmentDropsData = null;
-        
-        console.log(`Recreated ${this.segmentDrops.length} segment drops`);
-    }
+    // recreateSegmentDrops method removed - segment drops persist in scene now
     
     private setupSegmentDropCollisions(): void {
         // Setup collision detection for all existing segment drops
@@ -1005,8 +969,7 @@ export class SnakeScene extends Phaser.Scene {
         console.log('Reviving game...');
         const gameState = (window as any).gameState;
         
-        // Recreate segment drops from saved data
-        this.recreateSegmentDrops();
+        // Segment drops already exist in scene, no need to recreate
         
         // Reset snake position and state but keep length and don't reposition food
         this.resetSnake(true, false);
@@ -1132,15 +1095,9 @@ export class SnakeScene extends Phaser.Scene {
             this.obstacleManager = new ObstacleManager(this);
             this.tilemapObstacleManager = null;
             
-            if (gameState && gameState.isReviving && gameState.savedObstaclePositions) {
-                // Restore saved obstacles during revival
-                console.log('🔄 Revival mode - restoring saved obstacles');
-                this.obstacleManager.restoreObstacles();
-            } else {
-                // Generate new obstacles for new game
-                console.log('🎯 Obstacle mode enabled - generating new obstacles');
-                this.obstacleManager.generateObstacles();
-            }
+            // Always generate new obstacles (no saving/restoring needed anymore)
+            console.log('🎯 Obstacle mode enabled - generating obstacles');
+            this.obstacleManager.generateObstacles();
         } else if (this.settingsManager.isLevelModeEnabled()) {
             // Create tilemap obstacle manager for level mode
             const selectedLevelFile = this.settingsManager.getSelectedLevelFile();
@@ -1470,9 +1427,8 @@ export class SnakeScene extends Phaser.Scene {
         
         // Hide game over overlay with animation
         this.hideGameOverOverlay(() => {
-            // Revival logic happens in create() method when gameState.isReviving is true
-            console.log('Revival will be handled by existing revival logic');
-            this.scene.restart();
+            // Revive directly in current scene without restarting
+            this.reviveInCurrentScene();
         });
     }
 
@@ -1643,5 +1599,111 @@ export class SnakeScene extends Phaser.Scene {
         // Create simple particle effect around the center
         const centerTarget = { x: this.gameWidth / 2, y: this.gameHeight / 2 };
         UIHelper.createParticleEffect(this, centerTarget as any, 30, 0x4CAF50, 200);
+    }
+
+    private reviveInCurrentScene(): void {
+        console.log('Reviving in current scene without restart...');
+        const gameState = (window as any).gameState;
+        
+        // Initialize snake at grid center (obstacles remain unchanged)
+        const centerX = Math.floor(this.gameWidth / this.gridSize / 2) * this.gridSize + this.gridSize / 2;
+        const centerY = Math.floor(this.gameHeight / this.gridSize / 2) * this.gridSize + this.gridSize / 2;
+        this.snake = new Snake(this, centerX, centerY);
+        
+        // Setup obstacle collisions with snake after snake is created
+        if (this.obstacleManager) {
+            this.obstacleManager.setupCollisionsWithSnake();
+        }
+        if (this.tilemapObstacleManager) {
+            this.tilemapObstacleManager.setupCollisionsWithSnake();
+        }
+        
+        // Create food (reposition existing food)
+        if (!this.food) {
+            this.food = new Food(this);
+        } else {
+            this.food.reposition();
+        }
+        
+        if (!this.growthBoostFood) {
+            this.growthBoostFood = new GrowthBoostFood(this);
+        } else {
+            this.growthBoostFood.reposition();
+        }
+        
+        if (!this.shrinkFood) {
+            this.shrinkFood = new ShrinkFood(this);
+        } else {
+            this.shrinkFood.reposition();
+        }
+        
+        if (!this.speedBoostFood) {
+            this.speedBoostFood = new SpeedBoostFood(this);
+        } else {
+            this.speedBoostFood.reposition();
+        }
+        
+        if (!this.slowFood) {
+            this.slowFood = new SlowFood(this);
+        } else {
+            this.slowFood.reposition();
+        }
+        
+        // Recreate managers
+        this.foodTutorialManager = new FoodTutorialManager(this);
+        this.scoreIndicator = new ScoreIndicator(this);
+        
+        // Setup collision detection
+        this.physics.add.overlap(this.snake.head, this.food.sprite, this.eatFood, undefined, this);
+        this.physics.add.overlap(this.snake.head, this.growthBoostFood.sprite, this.eatGrowthBoostFood, undefined, this);
+        this.physics.add.overlap(this.snake.head, this.shrinkFood.sprite, this.eatShrinkFood, undefined, this);
+        this.physics.add.overlap(this.snake.head, this.speedBoostFood.sprite, this.eatSpeedBoostFood, undefined, this);
+        this.physics.add.overlap(this.snake.head, this.slowFood.sprite, this.eatSlowFood, undefined, this);
+        
+        // Segment drops already exist in scene, just setup collisions
+        this.setupSegmentDropCollisions();
+        
+        // Setup wall collision
+        const headBody = this.snake.head.body as any;
+        headBody.setCollideWorldBounds(true);
+        this.physics.world.on('worldbounds', this.gameOver, this);
+        
+        // Restore snake to saved length
+        if (gameState.savedSnakeLength && gameState.savedSnakeLength > 3) {
+            const currentLength = this.snake.body.length;
+            const targetLength = gameState.savedSnakeLength;
+            
+            if (currentLength < targetLength) {
+                // Grow snake to saved length
+                const segmentsToAdd = targetLength - currentLength;
+                this.snake.grow(segmentsToAdd);
+                console.log(`Restored snake length from ${currentLength} to ${targetLength} (added ${segmentsToAdd} segments)`);
+            } else if (currentLength > targetLength) {
+                // Shrink snake to saved length
+                const segmentsToRemove = currentLength - targetLength;
+                this.snake.shrink(segmentsToRemove);
+                console.log(`Restored snake length from ${currentLength} to ${targetLength} (removed ${segmentsToRemove} segments)`);
+            }
+        }
+        
+        // Start the snake
+        this.snake.start();
+        
+        // Start portal manager
+        this.portalManager.start();
+        
+        this.isGameStarted = true;
+        
+        // Update game state
+        gameState.isPaused = false;
+        gameState.isGameOver = false;
+        gameState.currentScene = this;
+        (window as any).updateUI();
+        
+        // Create revival celebration effect
+        this.createRevivalCelebration();
+        
+        console.log('Revival completed in current scene, obstacles preserved');
+        console.log('Snake length after revival:', this.snake.body.length);
     }
 } 
