@@ -21,19 +21,10 @@ export class ObstacleManager {
             new EShapePattern(scene)     // E-shape pattern
         ];
         
-        // Check if there's saved pattern information (during revival)
-        const gameState = (window as any).gameState;
-        if (gameState && gameState.isReviving && gameState.savedObstaclePattern) {
-            // Use saved pattern
-            const savedPatternName = gameState.savedObstaclePattern;
-            this.selectedPattern = this.patterns.find(pattern => pattern.getName() === savedPatternName) || this.patterns[0];
-            console.log(`🔄 Revival mode - using saved pattern: ${this.selectedPattern.getName()}`);
-        } else {
-            // Randomly select one shape, use this shape throughout the entire game
-            const randomIndex = Math.floor(Math.random() * this.patterns.length);
-            this.selectedPattern = this.patterns[randomIndex];
-            console.log(`🎲 Game started! Randomly selected: ${this.selectedPattern.getName()}`);
-        }
+        // Randomly select one shape, use this shape throughout the entire game
+        const randomIndex = Math.floor(Math.random() * this.patterns.length);
+        this.selectedPattern = this.patterns[randomIndex];
+        console.log(`🎲 Game started! Randomly selected: ${this.selectedPattern.getName()}`);
     }
 
     public generateObstacles(): void {
@@ -112,57 +103,9 @@ export class ObstacleManager {
         this.clearObstacles();
     }
 
-    public saveObstacles(): void {
-        this.savedObstaclePositions = this.obstacles.map(obstacle => ({
-            x: obstacle.x,
-            y: obstacle.y
-        }));
-        
-        // Also save to global state for revival
-        const gameState = (window as any).gameState;
-        if (gameState) {
-            gameState.savedObstaclePositions = this.savedObstaclePositions;
-            gameState.savedObstaclePattern = this.selectedPattern.getName();
-        }
-        
-        console.log(`Saved ${this.savedObstaclePositions.length} obstacle positions and pattern: ${this.selectedPattern.getName()}`);
-    }
+    // saveObstacles method removed - obstacles persist in scene now
 
-    public restoreObstacles(): void {
-        // Try to get saved positions from global state first
-        const gameState = (window as any).gameState;
-        let positionsToRestore = this.savedObstaclePositions;
-        
-        if (gameState && gameState.savedObstaclePositions) {
-            positionsToRestore = gameState.savedObstaclePositions;
-            // Clear the saved data after restoring
-            gameState.savedObstaclePositions = null;
-            gameState.savedObstaclePattern = null;
-        }
-        
-        if (positionsToRestore.length === 0) {
-            console.log('No saved obstacles to restore');
-            return;
-        }
+    // restoreObstacles method removed - obstacles persist in scene now
 
-        console.log(`Restoring ${positionsToRestore.length} obstacles`);
-        
-        // Clear existing obstacles
-        this.clearObstacles();
-        
-        // Create obstacles from saved positions
-        positionsToRestore.forEach(pos => {
-            const obstacle = new Obstacle(this.scene, pos.x, pos.y);
-            this.obstacles.push(obstacle);
-        });
-        
-        // Setup collision detection with snake
-        this.setupCollisions();
-        
-        console.log(`Restored ${this.obstacles.length} obstacles`);
-    }
-
-    public hasSavedObstacles(): boolean {
-        return this.savedObstaclePositions.length > 0;
-    }
+    // hasSavedObstacles method removed - not needed anymore
 }

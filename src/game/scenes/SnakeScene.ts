@@ -4,13 +4,16 @@ import { Food } from '../entities/food/Food';
 import { GrowthBoostFood } from '../entities/food/good/GrowthBoostFood';
 import { SpeedBoostFood } from '../entities/food/good/SpeedBoostFood';
 import { PortalManager } from '../entities/items/special/portal/PortalManager';
+import { LevelLoader } from '../entities/levels/LevelLoader';
 import { ObstacleManager } from '../entities/obstacles/ObstacleManager';
+import { TilemapObstacleManager } from '../entities/obstacles/TilemapObstacleManager';
 import { ScoreIndicator } from '../entities/ScoreIndicator';
 import { SegmentDrop } from '../entities/SegmentDrop';
 import { Snake } from '../entities/Snake';
 import { EventBus } from '../EventBus';
 import { GameSettingsManager } from '../GameSettings';
 import { FoodTutorialManager } from '../tutorial/FoodTutorialManager';
+import { UIHelper } from '../utils/UIHelper';
 
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
     || ('ontouchstart' in window)
@@ -24,7 +27,8 @@ export class SnakeScene extends Phaser.Scene {
     public speedBoostFood!: SpeedBoostFood;
     public slowFood!: SlowFood;
     public portalManager!: PortalManager;
-    public obstacleManager!: ObstacleManager;
+    public obstacleManager: ObstacleManager | null = null;
+    public tilemapObstacleManager: TilemapObstacleManager | null = null;
     public gameSpeed: number;
     private gridSize: number;
     private gameWidth: number;
@@ -45,6 +49,17 @@ export class SnakeScene extends Phaser.Scene {
     // Settings Manager
     private settingsManager: GameSettingsManager;
 
+    // Game Over Overlay Elements
+    private gameOverOverlay?: Phaser.GameObjects.Rectangle;
+    private gameOverPanel?: Phaser.GameObjects.Graphics;
+    private gameOverTitleText?: Phaser.GameObjects.Text;
+    private gameOverScoreText?: Phaser.GameObjects.Text;
+    private gameOverHighScoreText?: Phaser.GameObjects.Text;
+    private gameOverRestartButton?: Phaser.GameObjects.Container;
+    private gameOverMenuButton?: Phaser.GameObjects.Container;
+    private gameOverReviveButton?: Phaser.GameObjects.Container;
+    private isWatchingAd: boolean = false;
+
     constructor() {
         super({ key: 'SnakeScene' });
         this.gameSpeed = 350;
@@ -58,7 +73,7 @@ export class SnakeScene extends Phaser.Scene {
         // No image loading needed - we'll use graphics
     }
 
-    public create(): void {
+    public async create(): Promise<void> {
         console.log('SnakeScene create() called');
         console.log('Game dimensions:', this.gameWidth, 'x', this.gameHeight);
         
@@ -74,23 +89,8 @@ export class SnakeScene extends Phaser.Scene {
         // Create portal manager
         this.portalManager = new PortalManager(this);
         
-        // Create obstacle manager and handle obstacles based on revival state
-        this.obstacleManager = new ObstacleManager(this);
-        
-        // Only handle obstacles if obstacle mode is enabled
-        if (this.settingsManager.isObstacleModeEnabled()) {
-            if (gameState && gameState.isReviving && gameState.savedObstaclePositions) {
-                // Restore saved obstacles during revival
-                console.log('🔄 Revival mode - restoring saved obstacles');
-                this.obstacleManager.restoreObstacles();
-            } else {
-                // Generate new obstacles for new game
-                console.log('🎯 Obstacle mode enabled - generating new obstacles');
-                this.obstacleManager.generateObstacles();
-            }
-        } else {
-            console.log('⚪ Obstacle mode disabled - no obstacles generated');
-        }
+        // Handle obstacles based on current mode
+        await this.setupObstacles(gameState);
         
         // Initialize snake at grid center (after obstacles)
         const centerX = Math.floor(this.gameWidth / this.gridSize / 2) * this.gridSize + this.gridSize / 2;
@@ -100,6 +100,9 @@ export class SnakeScene extends Phaser.Scene {
         // Setup obstacle collisions with snake after snake is created
         if (this.obstacleManager) {
             this.obstacleManager.setupCollisionsWithSnake();
+        }
+        if (this.tilemapObstacleManager) {
+            this.tilemapObstacleManager.setupCollisionsWithSnake();
         }
         
         // Create regular food (after obstacles)
@@ -147,6 +150,7 @@ export class SnakeScene extends Phaser.Scene {
         if (gameState) {
             if (!gameState.isReviving) {
                 gameState.score = 0;
+                gameState.length = this.snake.getLength(); // Set initial snake length
                 gameState.savedSnakeLength = undefined; // Clear saved length for new games
             }
             gameState.isPaused = false;
@@ -223,10 +227,14 @@ export class SnakeScene extends Phaser.Scene {
     }
 
     public isPositionOccupied(x: number, y: number): boolean {
-        if (!this.obstacleManager) return false;
+        if (!this.obstacleManager && !this.tilemapObstacleManager) return false;
         
-        const obstacles = this.obstacleManager.getObstacles();
+        const obstacles = this.obstacleManager ? this.obstacleManager.getObstacles() : [];
+        const tilemapObstacles = this.tilemapObstacleManager ? this.tilemapObstacleManager.getObstacles() : [];
+
         return obstacles.some((obstacle: any) => 
+            Math.abs(obstacle.x - x) < 15 && Math.abs(obstacle.y - y) < 15
+        ) || tilemapObstacles.some((obstacle: any) => 
             Math.abs(obstacle.x - x) < 15 && Math.abs(obstacle.y - y) < 15
         );
     }
@@ -357,10 +365,13 @@ export class SnakeScene extends Phaser.Scene {
         gameState.isPaused = false;
         gameState.isGameOver = false;
         gameState.isTeleporting = false;
-        (window as any).updateUI();
         
         // Reset snake position and state
         this.resetSnake();
+        
+        // Set initial snake length after reset
+        gameState.length = this.snake.getLength();
+        (window as any).updateUI();
         
         // Start the snake
         this.snake.start();
@@ -635,6 +646,7 @@ export class SnakeScene extends Phaser.Scene {
         this.food.reposition();
         
         const gameState = (window as any).gameState;
+        gameState.length = this.snake.getLength(); // Update length in game state
         const baseScoreGain = 10; // Base score gain of 10 points
         const scoreGain = Math.round(baseScoreGain * this.settingsManager.getScoreMultiplier());
         console.log(`Base score: ${baseScoreGain}, Multiplier: ${this.settingsManager.getScoreMultiplier()}, Final score: ${scoreGain}`);
@@ -666,6 +678,7 @@ export class SnakeScene extends Phaser.Scene {
         this.foodTutorialManager.showTutorial('growth-boost');
         
         const gameState = (window as any).gameState;
+        gameState.length = this.snake.getLength(); // Update length in game state
         const baseScoreGain = 50;
         const scoreGain = Math.round(baseScoreGain * this.settingsManager.getScoreMultiplier());
         gameState.score += scoreGain; // Higher score for growth boost food
@@ -695,6 +708,8 @@ export class SnakeScene extends Phaser.Scene {
         // Show tutorial for shrink food if not shown before
         this.foodTutorialManager.showTutorial('shrink-food');
         
+        const gameState = (window as any).gameState;
+        gameState.length = this.snake.getLength(); // Update length in game state
         // No score change for shrink food
         (window as any).updateUI();
         
@@ -711,6 +726,7 @@ export class SnakeScene extends Phaser.Scene {
         this.foodTutorialManager.showTutorial('speed-boost');
         
         const gameState = (window as any).gameState;
+        gameState.length = this.snake.getLength(); // Update length in game state
         const baseScoreGain = 10; // Same as regular food since it only grows by 1
         const scoreGain = Math.round(baseScoreGain * this.settingsManager.getScoreMultiplier());
         gameState.score += scoreGain;
@@ -741,6 +757,7 @@ export class SnakeScene extends Phaser.Scene {
         this.foodTutorialManager.showTutorial('slow-food');
         
         const gameState = (window as any).gameState;
+        gameState.length = this.snake.getLength(); // Update length in game state
         const baseScoreGain = 10; // Same as regular food since it grows by 1
         const scoreGain = Math.round(baseScoreGain * this.settingsManager.getScoreMultiplier());
         gameState.score += scoreGain;
@@ -774,16 +791,8 @@ export class SnakeScene extends Phaser.Scene {
                 console.log('Saved snake length:', gameState.savedSnakeLength);
             }
             
-            // Create segment drops
+            // Create segment drops (they will persist in the scene)
             this.createSegmentDrops();
-            
-            // Store segment drops data for revival BEFORE destroying snake
-            gameState.segmentDropsData = this.segmentDrops.map(drop => ({
-                x: drop.sprite.x,
-                y: drop.sprite.y,
-                value: drop.value
-            }));
-            console.log('Saved segment drops data:', gameState.segmentDropsData);
             
             // Stop portal manager
             this.portalManager.stop();
@@ -806,20 +815,15 @@ export class SnakeScene extends Phaser.Scene {
             // Create particle effect for game over
             this.createGameOverParticles();
             
-
-            
             this.isGameStarted = false;
             
             EventBus.emit('game-over', gameState.score);
             
-            // Save obstacles for revival
-            if (this.obstacleManager) {
-                this.obstacleManager.saveObstacles();
-            }
+            // No need to save obstacles since we're not switching scenes anymore
             
-            // Switch to game over scene after a short delay
+            // Show game over overlay instead of switching scene
             this.time.delayedCall(1000, () => {
-                this.scene.start('GameOverScene', { score: gameState.score });
+                this.showGameOverOverlay(gameState.score);
             });
         }
     }
@@ -874,29 +878,7 @@ export class SnakeScene extends Phaser.Scene {
         this.segmentDrops = [];
     }
     
-    private recreateSegmentDrops(): void {
-        const gameState = (window as any).gameState;
-        if (!gameState.segmentDropsData) return;
-        
-        console.log('Recreating segment drops from saved data');
-        
-        // Clear existing drops
-        this.clearSegmentDrops();
-        
-        // Recreate drops from saved data
-        gameState.segmentDropsData.forEach((dropData: any) => {
-            const segmentDrop = new SegmentDrop(this, dropData.x, dropData.y, dropData.value);
-            this.segmentDrops.push(segmentDrop);
-        });
-        
-        // Setup collision detection for the recreated segment drops
-        this.setupSegmentDropCollisions();
-        
-        // Clear the saved data
-        gameState.segmentDropsData = null;
-        
-        console.log(`Recreated ${this.segmentDrops.length} segment drops`);
-    }
+    // recreateSegmentDrops method removed - segment drops persist in scene now
     
     private setupSegmentDropCollisions(): void {
         // Setup collision detection for all existing segment drops
@@ -915,6 +897,11 @@ export class SnakeScene extends Phaser.Scene {
             // Grow snake immediately
             if (this.snake) {
                 this.snake.grow(collected);
+                
+                // Update length in game state
+                const gameState = (window as any).gameState;
+                gameState.length = this.snake.getLength();
+                (window as any).updateUI();
                 
                 // Show collection indicator
                 if (this.scoreIndicator) {
@@ -985,7 +972,10 @@ export class SnakeScene extends Phaser.Scene {
         const gameState = (window as any).gameState;
         if (gameState.isPaused || gameState.isGameOver) return;
         
-        this.snake.update(time);
+        // Add null check for snake
+        if (this.snake) {
+            this.snake.update(time);
+        }
     }
 
 
@@ -994,8 +984,7 @@ export class SnakeScene extends Phaser.Scene {
         console.log('Reviving game...');
         const gameState = (window as any).gameState;
         
-        // Recreate segment drops from saved data
-        this.recreateSegmentDrops();
+        // Segment drops already exist in scene, no need to recreate
         
         // Reset snake position and state but keep length and don't reposition food
         this.resetSnake(true, false);
@@ -1113,5 +1102,625 @@ export class SnakeScene extends Phaser.Scene {
                 }
             });
         }
+    }
+
+    private async setupObstacles(gameState: any): Promise<void> {
+        if (this.settingsManager.isObstacleModeEnabled()) {
+            // Create obstacle manager for dynamic obstacle mode
+            this.obstacleManager = new ObstacleManager(this);
+            this.tilemapObstacleManager = null;
+            
+            // Always generate new obstacles (no saving/restoring needed anymore)
+            console.log('🎯 Obstacle mode enabled - generating obstacles');
+            this.obstacleManager.generateObstacles();
+        } else if (this.settingsManager.isLevelModeEnabled()) {
+            // Create tilemap obstacle manager for level mode
+            const selectedLevelFile = this.settingsManager.getSelectedLevelFile();
+            if (selectedLevelFile) {
+                console.log('📋 Level mode enabled - loading level:', selectedLevelFile);
+                this.tilemapObstacleManager = new TilemapObstacleManager(this);
+                this.obstacleManager = null;
+                
+                try {
+                    const levelData = await LevelLoader.loadLevel(selectedLevelFile);
+                    if (levelData) {
+                        await this.tilemapObstacleManager.loadLevelObstacles(levelData);
+                        console.log(`✅ Successfully loaded level: ${levelData.name}`);
+                    } else {
+                        console.error('❌ Failed to load level data');
+                        // Fall back to no obstacles
+                        this.tilemapObstacleManager = null;
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading level:', error);
+                    // Fall back to no obstacles
+                    this.tilemapObstacleManager = null;
+                }
+            } else {
+                console.warn('⚠️ Level mode enabled but no level selected');
+                this.obstacleManager = null;
+                this.tilemapObstacleManager = null;
+            }
+        } else {
+            console.log('⚪ No obstacle mode enabled');
+            this.obstacleManager = null;
+            this.tilemapObstacleManager = null;
+        }
+    }
+
+    // =================== GAME OVER OVERLAY METHODS ===================
+
+    private showGameOverOverlay(finalScore: number): void {
+        console.log('Showing game over overlay with score:', finalScore);
+        
+        // Disable any mobile input interference
+        this.disableMobileInputInterference();
+        
+        const centerX = this.gameWidth / 2;
+        const centerY = this.gameHeight / 2;
+
+        // Create background overlay
+        this.gameOverOverlay = UIHelper.createOverlay(this, 0x000000, 0.8);
+
+        // Create game over panel
+        this.gameOverPanel = UIHelper.createPanel(this, {
+            x: centerX,
+            y: centerY,
+            width: 500,
+            height: 480,
+            fillColor: 0x333333,
+            borderColor: 0xFF6B6B,
+            borderWidth: 4,
+            borderRadius: 25
+        });
+
+        // Create title
+        this.gameOverTitleText = UIHelper.createText(this, {
+            x: centerX,
+            y: centerY - 140,
+            text: 'GAME OVER!',
+            fontSize: '48px',
+            color: '#FF6B6B',
+            fontStyle: 'bold'
+        });
+
+        // Create score text
+        this.gameOverScoreText = UIHelper.createText(this, {
+            x: centerX,
+            y: centerY - 80,
+            text: `Final: ${finalScore}`,
+            fontSize: '32px',
+            color: '#ffffff',
+            fontStyle: 'bold'
+        });
+
+        // Get high score
+        const gameState = (window as any).gameState;
+        const highScore = gameState ? gameState.highScore : 0;
+        
+        // Create high score text
+        this.gameOverHighScoreText = UIHelper.createText(this, {
+            x: centerX,
+            y: centerY - 40,
+            text: `High: ${highScore}`,
+            fontSize: '24px',
+            color: '#FFD700'
+        });
+
+        // Create buttons - adjust positions to accommodate three buttons
+        this.createGameOverReviveButton(centerX, centerY + 20); // Center button
+        this.createGameOverRestartButton(centerX - 120, centerY + 100); // Left button
+        this.createGameOverMenuButton(centerX + 120, centerY + 100); // Right button
+
+        // Add entrance animations
+        this.addGameOverEntranceAnimations();
+
+        // Create particle effect
+        this.createGameOverOverlayParticles();
+    }
+
+    private disableMobileInputInterference(): void {
+        console.log('Disabling mobile input interference for Game Over overlay');
+        
+        const gameState = (window as any).gameState;
+        if (gameState && gameState.currentScene && gameState.currentScene.snake) {
+            const snake = gameState.currentScene.snake;
+            if (snake.swipeInputManager) {
+                console.log('Input manager disabled (via snake.isMoving)');
+            }
+        }
+    }
+
+    private createGameOverReviveButton(x: number, y: number): void {
+        this.gameOverReviveButton = UIHelper.createButton(this, {
+            x,
+            y,
+            width: 240,
+            height: 60,
+            text: '📺 REVIVE BY WATCH AD',
+            fontSize: '18px',
+            colors: {
+                fill: [0x4CAF50, 0x45A049, 0x388E3C, 0x2E7D32],
+                border: 0x66BB6A,
+                text: '#ffffff',
+                stroke: '#2E7D32'
+            },
+            onClick: () => {
+                console.log('Revive button clicked, isWatchingAd:', this.isWatchingAd);
+                if (this.isWatchingAd) {
+                    console.log('Already watching ad, ignoring click');
+                    return;
+                }
+                this.watchAdAndRevive();
+            }
+        });
+    }
+
+    private createGameOverRestartButton(x: number, y: number): void {
+        this.gameOverRestartButton = UIHelper.createButton(this, {
+            x,
+            y,
+            width: 200,
+            height: 60,
+            text: 'PLAY AGAIN',
+            fontSize: '20px',
+            colors: {
+                fill: [0xFF6B6B, 0xFF5252, 0xE53E3E, 0xD32F2F],
+                border: 0xFF8A80,
+                text: '#ffffff',
+                stroke: '#D32F2F'
+            },
+            onClick: () => {
+                this.restartGameFromOverlay();
+            }
+        });
+    }
+
+    private createGameOverMenuButton(x: number, y: number): void {
+        this.gameOverMenuButton = UIHelper.createButton(this, {
+            x,
+            y,
+            width: 200,
+            height: 60,
+            text: 'MAIN MENU',
+            fontSize: '20px',
+            colors: {
+                fill: [0x1a237e, 0x283593, 0x303f9f, 0x3949ab],
+                border: 0x5c6bc0,
+                text: '#ffffff',
+                stroke: '#1a237e'
+            },
+            onClick: () => {
+                this.goToMenuFromOverlay();
+            }
+        });
+    }
+
+    private watchAdAndRevive(): void {
+        console.log('watchAdAndRevive called, current state:', {
+            isWatchingAd: this.isWatchingAd,
+            reviveButton: !!this.gameOverReviveButton
+        });
+
+        if (this.isWatchingAd) {
+            console.log('Already watching ad, preventing duplicate calls');
+            return;
+        }
+        
+        if (!this.gameOverReviveButton) {
+            console.error('Revive button not found!');
+            return;
+        }
+        
+        console.log('Starting ad watch for revive...');
+        this.isWatchingAd = true;
+        
+        try {
+            // Change revive button to show loading state
+            UIHelper.setButtonLoadingState(
+                this.gameOverReviveButton,
+                '📺 WATCHING AD...',
+                {
+                    fill: [0x666666, 0x555555, 0x444444, 0x333333],
+                    border: 0x888888,
+                    text: '#ffffff'
+                }
+            );
+            
+            // Create loading animation
+            this.createAdLoadingEffect();
+            
+            // Mock ad watching - simulate 3 seconds
+            this.time.delayedCall(3000, () => {
+                console.log('Ad watching simulation completed');
+                this.onAdCompleted();
+            });
+            
+        } catch (error) {
+            console.error('Error in watchAdAndRevive:', error);
+            this.isWatchingAd = false;
+            this.restoreReviveButton();
+        }
+    }
+
+    private restoreReviveButton(): void {
+        if (!this.gameOverReviveButton) return;
+        
+        try {
+            UIHelper.restoreButtonState(
+                this.gameOverReviveButton,
+                '📺 REVIVE BY WATCH AD',
+                {
+                    fill: [0x4CAF50, 0x45A049, 0x388E3C, 0x2E7D32],
+                    border: 0x66BB6A,
+                    text: '#ffffff'
+                }
+            );
+        } catch (error) {
+            console.error('Error restoring revive button:', error);
+        }
+    }
+
+    private createAdLoadingEffect(): void {
+        if (!this.gameOverReviveButton) return;
+        
+        // Create loading particles around the revive button
+        UIHelper.createParticleEffect(this, this.gameOverReviveButton, 8, 0x4CAF50, 100);
+        
+        // Add pulsing effect to revive button during ad watching
+        UIHelper.createPulseAnimation(this, this.gameOverReviveButton, 1.05, 500, 5);
+    }
+
+    private onAdCompleted(): void {
+        console.log('Ad completed! Reviving player...');
+        
+        if (!this.gameOverReviveButton) {
+            console.error('Revive button not found in onAdCompleted');
+            this.isWatchingAd = false;
+            return;
+        }
+        
+        try {
+            // Show success effect
+            this.createReviveSuccessEffect();
+            
+            // Change button text to show success
+            const text = this.gameOverReviveButton.getAt(1) as Phaser.GameObjects.Text;
+            const background = this.gameOverReviveButton.getAt(0) as Phaser.GameObjects.Graphics;
+            
+            if (text && background) {
+                text.setText('✅ REVIVED!');
+                
+                background.clear();
+                background.fillGradientStyle(0x4CAF50, 0x45A049, 0x388E3C, 0x2E7D32, 1);
+                background.fillRoundedRect(-120, -30, 240, 60, 30);
+                background.lineStyle(3, 0x66BB6A, 1);
+                background.strokeRoundedRect(-120, -30, 240, 60, 30);
+                
+                // Keep button disabled to prevent multiple clicks
+                background.disableInteractive();
+                text.disableInteractive();
+                this.gameOverReviveButton.disableInteractive();
+            } else {
+                console.error('Failed to get button elements in onAdCompleted');
+            }
+            
+            // Reset the ad watching flag
+            this.isWatchingAd = false;
+            
+            // After a short delay, revive the player
+            this.time.delayedCall(1000, () => {
+                console.log('Starting player revival...');
+                this.revivePlayerFromOverlay();
+            });
+            
+        } catch (error) {
+            console.error('Error in onAdCompleted:', error);
+            this.isWatchingAd = false;
+            this.restoreReviveButton();
+        }
+    }
+
+    private createReviveSuccessEffect(): void {
+        if (!this.gameOverReviveButton) return;
+        
+        // Create celebration particles
+        UIHelper.createParticleEffect(this, this.gameOverReviveButton, 20, 0x4CAF50, 120);
+    }
+
+    private revivePlayerFromOverlay(): void {
+        console.log('Reviving player from overlay...');
+        
+        // Reset game state for revival
+        const gameState = (window as any).gameState;
+        if (gameState) {
+            gameState.isGameOver = false;
+            gameState.isPaused = false;
+            gameState.isReviving = true; // Set revival flag
+            // Keep the current score for revival
+        }
+        
+        // Hide game over overlay with animation
+        this.hideGameOverOverlay(() => {
+            // Revive directly in current scene without restarting
+            this.reviveInCurrentScene();
+        });
+    }
+
+    private restartGameFromOverlay(): void {
+        console.log('Restarting game from overlay...');
+        
+        // Reset game state for restart
+        const gameState = (window as any).gameState;
+        if (gameState) {
+            gameState.score = 0; // Reset score for restart
+            gameState.length = 3; // Reset length for restart
+            gameState.isGameOver = false;
+            gameState.isPaused = false;
+            gameState.isReviving = false; // Not reviving, this is a restart
+        }
+        
+        // Hide game over overlay with animation
+        this.hideGameOverOverlay(() => {
+            this.scene.restart();
+        });
+    }
+
+    private goToMenuFromOverlay(): void {
+        console.log('Going to menu from overlay...');
+        
+        // Reset game state for menu
+        const gameState = (window as any).gameState;
+        if (gameState) {
+            gameState.score = 0; // Reset score when going to menu
+            gameState.length = 3; // Reset length when going to menu
+            gameState.isGameOver = false;
+            gameState.isPaused = false;
+            gameState.isReviving = false;
+        }
+        
+        // Hide game over overlay with animation
+        this.hideGameOverOverlay(() => {
+            this.scene.start('MenuScene');
+        });
+    }
+
+    private hideGameOverOverlay(onComplete?: () => void): void {
+        const targets = [
+            this.gameOverTitleText,
+            this.gameOverScoreText,
+            this.gameOverHighScoreText,
+            this.gameOverRestartButton,
+            this.gameOverMenuButton,
+            this.gameOverReviveButton
+        ].filter(target => target !== undefined);
+
+        if (targets.length > 0) {
+            this.tweens.add({
+                targets: targets,
+                alpha: 0,
+                scaleX: 0.8,
+                scaleY: 0.8,
+                duration: 300,
+                ease: 'Power2',
+                onComplete: () => {
+                    this.cleanupGameOverOverlay();
+                    if (onComplete) {
+                        onComplete();
+                    }
+                }
+            });
+        } else {
+            this.cleanupGameOverOverlay();
+            if (onComplete) {
+                onComplete();
+            }
+        }
+    }
+
+    private cleanupGameOverOverlay(): void {
+        // Destroy all game over overlay elements
+        this.gameOverOverlay?.destroy();
+        this.gameOverPanel?.destroy();
+        this.gameOverTitleText?.destroy();
+        this.gameOverScoreText?.destroy();
+        this.gameOverHighScoreText?.destroy();
+        this.gameOverRestartButton?.destroy();
+        this.gameOverMenuButton?.destroy();
+        this.gameOverReviveButton?.destroy();
+        
+        // Reset references
+        this.gameOverOverlay = undefined;
+        this.gameOverPanel = undefined;
+        this.gameOverTitleText = undefined;
+        this.gameOverScoreText = undefined;
+        this.gameOverHighScoreText = undefined;
+        this.gameOverRestartButton = undefined;
+        this.gameOverMenuButton = undefined;
+        this.gameOverReviveButton = undefined;
+        this.isWatchingAd = false;
+    }
+
+    private addGameOverEntranceAnimations(): void {
+        // Panel animation
+        if (this.gameOverPanel) {
+            this.gameOverPanel.setScale(0.5);
+            this.gameOverPanel.setAlpha(0);
+            this.tweens.add({
+                targets: this.gameOverPanel,
+                scaleX: 1,
+                scaleY: 1,
+                alpha: 1,
+                duration: 400,
+                ease: 'Back.easeOut'
+            });
+        }
+
+        // Title animation
+        if (this.gameOverTitleText) {
+            this.gameOverTitleText.setAlpha(0);
+            this.gameOverTitleText.setScale(0.5);
+            this.tweens.add({
+                targets: this.gameOverTitleText,
+                alpha: 1,
+                scaleX: 1,
+                scaleY: 1,
+                duration: 600,
+                ease: 'Back.easeOut',
+                delay: 200
+            });
+        }
+
+        // Score text animation
+        if (this.gameOverScoreText) {
+            this.gameOverScoreText.setAlpha(0);
+            this.gameOverScoreText.setY(this.gameOverScoreText.y + 30);
+            this.tweens.add({
+                targets: this.gameOverScoreText,
+                alpha: 1,
+                y: this.gameOverScoreText.y - 30,
+                duration: 500,
+                ease: 'Power2',
+                delay: 400
+            });
+        }
+
+        // High score text animation
+        if (this.gameOverHighScoreText) {
+            this.gameOverHighScoreText.setAlpha(0);
+            this.gameOverHighScoreText.setY(this.gameOverHighScoreText.y + 30);
+            this.tweens.add({
+                targets: this.gameOverHighScoreText,
+                alpha: 1,
+                y: this.gameOverHighScoreText.y - 30,
+                duration: 500,
+                ease: 'Power2',
+                delay: 600
+            });
+        }
+
+        // Buttons immediately visible and active
+        if (this.gameOverRestartButton) {
+            this.gameOverRestartButton.setActive(true).setVisible(true);
+        }
+        if (this.gameOverMenuButton) {
+            this.gameOverMenuButton.setActive(true).setVisible(true);
+        }
+        if (this.gameOverReviveButton) {
+            this.gameOverReviveButton.setActive(true).setVisible(true);
+        }
+        console.log('Game Over buttons set to visible immediately');
+    }
+
+    private createGameOverOverlayParticles(): void {
+        // Create simple particle effect around the center
+        const centerTarget = { x: this.gameWidth / 2, y: this.gameHeight / 2 };
+        UIHelper.createParticleEffect(this, centerTarget as any, 30, 0x4CAF50, 200);
+    }
+
+    private reviveInCurrentScene(): void {
+        console.log('Reviving in current scene without restart...');
+        const gameState = (window as any).gameState;
+        
+        // Initialize snake at grid center (obstacles remain unchanged)
+        const centerX = Math.floor(this.gameWidth / this.gridSize / 2) * this.gridSize + this.gridSize / 2;
+        const centerY = Math.floor(this.gameHeight / this.gridSize / 2) * this.gridSize + this.gridSize / 2;
+        this.snake = new Snake(this, centerX, centerY);
+        
+        // Setup obstacle collisions with snake after snake is created
+        if (this.obstacleManager) {
+            this.obstacleManager.setupCollisionsWithSnake();
+        }
+        if (this.tilemapObstacleManager) {
+            this.tilemapObstacleManager.setupCollisionsWithSnake();
+        }
+        
+        // Create food (reposition existing food)
+        if (!this.food) {
+            this.food = new Food(this);
+        } else {
+            this.food.reposition();
+        }
+        
+        if (!this.growthBoostFood) {
+            this.growthBoostFood = new GrowthBoostFood(this);
+        } else {
+            this.growthBoostFood.reposition();
+        }
+        
+        if (!this.shrinkFood) {
+            this.shrinkFood = new ShrinkFood(this);
+        } else {
+            this.shrinkFood.reposition();
+        }
+        
+        if (!this.speedBoostFood) {
+            this.speedBoostFood = new SpeedBoostFood(this);
+        } else {
+            this.speedBoostFood.reposition();
+        }
+        
+        if (!this.slowFood) {
+            this.slowFood = new SlowFood(this);
+        } else {
+            this.slowFood.reposition();
+        }
+        
+        // Recreate managers
+        this.foodTutorialManager = new FoodTutorialManager(this);
+        this.scoreIndicator = new ScoreIndicator(this);
+        
+        // Setup collision detection
+        this.physics.add.overlap(this.snake.head, this.food.sprite, this.eatFood, undefined, this);
+        this.physics.add.overlap(this.snake.head, this.growthBoostFood.sprite, this.eatGrowthBoostFood, undefined, this);
+        this.physics.add.overlap(this.snake.head, this.shrinkFood.sprite, this.eatShrinkFood, undefined, this);
+        this.physics.add.overlap(this.snake.head, this.speedBoostFood.sprite, this.eatSpeedBoostFood, undefined, this);
+        this.physics.add.overlap(this.snake.head, this.slowFood.sprite, this.eatSlowFood, undefined, this);
+        
+        // Segment drops already exist in scene, just setup collisions
+        this.setupSegmentDropCollisions();
+        
+        // Setup wall collision
+        const headBody = this.snake.head.body as any;
+        headBody.setCollideWorldBounds(true);
+        this.physics.world.on('worldbounds', this.gameOver, this);
+        
+        // Restore snake to saved length
+        if (gameState.savedSnakeLength && gameState.savedSnakeLength > 3) {
+            const currentLength = this.snake.body.length;
+            const targetLength = gameState.savedSnakeLength;
+            
+            if (currentLength < targetLength) {
+                // Grow snake to saved length
+                const segmentsToAdd = targetLength - currentLength;
+                this.snake.grow(segmentsToAdd);
+                console.log(`Restored snake length from ${currentLength} to ${targetLength} (added ${segmentsToAdd} segments)`);
+            } else if (currentLength > targetLength) {
+                // Shrink snake to saved length
+                const segmentsToRemove = currentLength - targetLength;
+                this.snake.shrink(segmentsToRemove);
+                console.log(`Restored snake length from ${currentLength} to ${targetLength} (removed ${segmentsToRemove} segments)`);
+            }
+        }
+        
+        // Start the snake
+        this.snake.start();
+        
+        // Start portal manager
+        this.portalManager.start();
+        
+        this.isGameStarted = true;
+        
+        // Update game state
+        gameState.isPaused = false;
+        gameState.isGameOver = false;
+        gameState.currentScene = this;
+        (window as any).updateUI();
+        
+        // Create revival celebration effect
+        this.createRevivalCelebration();
+        
+        console.log('Revival completed in current scene, obstacles preserved');
+        console.log('Snake length after revival:', this.snake.body.length);
     }
 } 

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Tileset Generator for Tiled</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        canvas {
+            border: 2px solid #333;
+            margin: 20px 0;
+            background: white;
+        }
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .tile-legend {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        .tile-item {
+            display: flex;
+            align-items: center;
+            padding: 5px;
+        }
+        .color-box {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border: 1px solid #000;
+        }
+        .instructions {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐍 Snake Tileset Generator</h1>
+        <p>为Tiled地图编辑器生成 <code>snake_tileset.png</code> 文件</p>
+        
+        <div class="controls">
+            <button onclick="generateTileset()">生成图块集</button>
+            <button onclick="downloadTileset()">下载 PNG</button>
+        </div>
+        
+        <canvas id="tilesetCanvas" width="80" height="80"></canvas>
+        
+        <div class="instructions">
+            <strong>使用说明：</strong>
+            <ol>
+                <li>点击"生成图块集"创建图像</li>
+                <li>点击"下载 PNG"保存为 <code>snake_tileset.png</code></li>
+                <li>将PNG文件放在与Tiled地图文件相同的目录</li>
+                <li>在Tiled中打开 <code>tiled_snake_level.json</code></li>
+            </ol>
+        </div>
+        
+        <h3>图块说明</h3>
+        <div class="tile-legend">
+            <div class="tile-item">
+                <div class="color-box" style="background-color: #222222;"></div>
+                <span>ID 1: 背景 (深灰)</span>
+            </div>
+            <div class="tile-item">
+                <div class="color-box" style="background-color: #ffffff; border: 2px solid #ccc;"></div>
+                <span>ID 2: 空地 (白色)</span>
+            </div>
+            <div class="tile-item">
+                <div class="color-box" style="background-color: #666666;"></div>
+                <span>ID 3: 障碍物 (灰色)</span>
+            </div>
+            <div class="tile-item">
+                <div class="color-box" style="background-color: #00ff00;"></div>
+                <span>ID 4: 普通食物 (绿色)</span>
+            </div>
+            <div class="tile-item">
+                <div class="color-box" style="background-color: #ffff00;"></div>
+                <span>ID 5: 成长食物 (黄色)</span>
+            </div>
+            <div class="tile-item">
+                <div class="color-box" style="background-color: #ff8800;"></div>
+                <span>ID 6: 速度食物 (橙色)</span>
+            </div>
+            <div class="tile-item">
+                <div class="color-box" style="background-color: #ff0000;"></div>
+                <span>ID 7: 缩短食物 (红色)</span>
+            </div>
+            <div class="tile-item">
+                <div class="color-box" style="background-color: #ff88ff;"></div>
+                <span>ID 8: 减速食物 (粉色)</span>
+            </div>
+            <div class="tile-item">
+                <div class="color-box" style="background-color: #4a90e2;"></div>
+                <span>ID 9: 传送门 (蓝色)</span>
+            </div>
+            <div class="tile-item">
+                <div class="color-box" style="background-color: #32cd32;"></div>
+                <span>ID 10: 蛇出生点 (青绿)</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tileColors = [
+            '#222222', // 0: background
+            '#ffffff', // 1: empty  
+            '#666666', // 2: obstacle
+            '#00ff00', // 3: normal_food
+            '#ffff00', // 4: growth_boost_food
+            '#ff8800', // 5: speed_boost_food
+            '#ff0000', // 6: shrink_food
+            '#ff88ff', // 7: slow_food
+            '#4a90e2', // 8: portal
+            '#32cd32', // 9: snake_spawn
+            '#000000', // 10-15: unused (black)
+            '#000000',
+            '#000000',
+            '#000000',
+            '#000000',
+            '#000000'
+        ];
+
+        function generateTileset() {
+            const canvas = document.getElementById('tilesetCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Generate 4x4 grid of 20x20 tiles
+            const tileSize = 20;
+            const cols = 4;
+            const rows = 4;
+            
+            for (let i = 0; i < 16; i++) {
+                const x = (i % cols) * tileSize;
+                const y = Math.floor(i / cols) * tileSize;
+                
+                // Fill tile with color
+                ctx.fillStyle = tileColors[i];
+                ctx.fillRect(x, y, tileSize, tileSize);
+                
+                // Add special designs for certain tiles
+                switch(i) {
+                    case 1: // empty - white with light grid
+                        ctx.strokeStyle = "#dddddd";
+                        ctx.lineWidth = 0.5;
+                        ctx.strokeRect(x, y, tileSize, tileSize);
+                        break;
+                        
+                    case 2: // obstacle - add texture
+                        ctx.fillStyle = "#444444";
+                        ctx.fillRect(x + 2, y + 2, 4, 4);
+                        ctx.fillRect(x + 14, y + 14, 4, 4);
+                        ctx.fillRect(x + 2, y + 14, 4, 4);
+                        ctx.fillRect(x + 14, y + 2, 4, 4);
+                        break;
+                        
+                    case 3: // normal_food - circle
+                        ctx.fillStyle = "#00dd00";
+                        ctx.beginPath();
+                        ctx.arc(x + 10, y + 10, 6, 0, 2 * Math.PI);
+                        ctx.fill();
+                        break;
+                        
+                    case 4: // growth_boost_food - star
+                        drawStar(ctx, x + 10, y + 10, 5, 6, 3, "#dddd00");
+                        break;
+                        
+                    case 5: // speed_boost_food - triangle
+                        ctx.fillStyle = "#cc6600";
+                        ctx.beginPath();
+                        ctx.moveTo(x + 10, y + 4);
+                        ctx.lineTo(x + 16, y + 16);
+                        ctx.lineTo(x + 4, y + 16);
+                        ctx.closePath();
+                        ctx.fill();
+                        break;
+                        
+                    case 6: // shrink_food - X shape
+                        ctx.strokeStyle = "#cc0000";
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.moveTo(x + 4, y + 4);
+                        ctx.lineTo(x + 16, y + 16);
+                        ctx.moveTo(x + 16, y + 4);
+                        ctx.lineTo(x + 4, y + 16);
+                        ctx.stroke();
+                        break;
+                        
+                    case 7: // slow_food - wave
+                        ctx.strokeStyle = "#cc44cc";
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(x + 2, y + 10);
+                        ctx.quadraticCurveTo(x + 6, y + 6, x + 10, y + 10);
+                        ctx.quadraticCurveTo(x + 14, y + 14, x + 18, y + 10);
+                        ctx.stroke();
+                        break;
+                        
+                    case 8: // portal - circular gradient
+                        const gradient = ctx.createRadialGradient(x + 10, y + 10, 2, x + 10, y + 10, 8);
+                        gradient.addColorStop(0, "#6bb6ff");
+                        gradient.addColorStop(1, "#1a5d99");
+                        ctx.fillStyle = gradient;
+                        ctx.beginPath();
+                        ctx.arc(x + 10, y + 10, 8, 0, 2 * Math.PI);
+                        ctx.fill();
+                        break;
+                        
+                    case 9: // snake_spawn - S shape
+                        ctx.strokeStyle = "#228822";
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.moveTo(x + 4, y + 6);
+                        ctx.lineTo(x + 12, y + 6);
+                        ctx.lineTo(x + 12, y + 10);
+                        ctx.lineTo(x + 8, y + 10);
+                        ctx.lineTo(x + 8, y + 14);
+                        ctx.lineTo(x + 16, y + 14);
+                        ctx.stroke();
+                        break;
+                }
+                
+                // Add border to all tiles
+                ctx.strokeStyle = "#000000";
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x, y, tileSize, tileSize);
+            }
+        }
+        
+        function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius, color) {
+            let rot = Math.PI / 2 * 3;
+            let x = cx;
+            let y = cy;
+            const step = Math.PI / spikes;
+            
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - outerRadius);
+            
+            for (let i = 0; i < spikes; i++) {
+                x = cx + Math.cos(rot) * outerRadius;
+                y = cy + Math.sin(rot) * outerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+                
+                x = cx + Math.cos(rot) * innerRadius;
+                y = cy + Math.sin(rot) * innerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+            }
+            
+            ctx.lineTo(cx, cy - outerRadius);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+        
+        function downloadTileset() {
+            const canvas = document.getElementById('tilesetCanvas');
+            const link = document.createElement('a');
+            link.download = 'snake_tileset.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        // Generate tileset on page load
+        window.onload = function() {
+            generateTileset();
+        };
+    </script>
+</body>
+</html> 

@@ -4,7 +4,7 @@
 
 /* Canvas adaptive size */
 #gameCanvas {
-    width: 100% !important;
+    width: auto;
     max-width: 600px !important;
     height: auto !important;
     max-height: calc(100vh - 110px);

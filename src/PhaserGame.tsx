@@ -75,18 +75,7 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(function PhaserGame
     }, [currentActiveScene, ref]);
 
     return (
-        <div 
-            id="gameCanvas" 
-            style={{
-                width: '100%',
-                maxWidth: '600px',
-                height: 'auto',
-                margin: '0 auto',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center'
-            }}
-        ></div>
+        <div id="gameCanvas"></div>
     );
 
 });

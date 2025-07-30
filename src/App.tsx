@@ -8,6 +8,7 @@ function App()
     const phaserRef = useRef<IRefPhaserGame | null>(null);
     const [score, setScore] = useState(0);
     const [highScore, setHighScore] = useState(0);
+    const [length, setLength] = useState(3);
 
     // Event emitted from the PhaserGame component
     const currentScene = (scene: Phaser.Scene) => {
@@ -86,13 +87,16 @@ function App()
     return (
         <div className="game-container">
             <div className="header-row">
-                <h1>🐍 Snake Game</h1>
+                <h1>🐍 Snake </h1>
                 <div className="score-display">
                     <div className="score-item">
                         Score: <span id="score">{score}</span>
                     </div>
                     <div className="score-item">
                         High: <span id="highScore">{highScore}</span>
+                    </div>
+                    <div className="score-item">
+                        Length: <span id="length">{length}</span>
                     </div>
                 </div>
             </div>

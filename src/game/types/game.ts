@@ -2,6 +2,7 @@
 export interface GameState {
     score: number;
     highScore: number;
+    length: number;
     isPaused: boolean;
     isGameOver: boolean;
 }
