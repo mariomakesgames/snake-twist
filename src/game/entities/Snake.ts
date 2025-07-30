@@ -128,14 +128,14 @@ export class Snake {
         }));
 
         // Calculate new head position
-        const gridSize = (this.scene as any).gridSize || 20; // Use unified grid size
-        const newHeadX = this.head.x + this.direction.x * gridSize;
+        const gridSize = (this.scene as any).gridSize || 20;
+        const newHeadX = this.head.x + this.direction.x * gridSize; // calculate the new head position based on the direction and grid size
         const newHeadY = this.head.y + this.direction.y * gridSize;
 
         // Check for portal teleportation
         const portalManager = (this.scene as any).portalManager;
         if (portalManager && !portalManager.isCurrentlyTeleporting()) {
-            const teleportPos = portalManager.checkTeleportation(newHeadX, newHeadY);
+            const teleportPos = portalManager.checkTeleportation(newHeadX, newHeadY); // check if run into a portal, if so returns the position the head will be teleported to
             if (teleportPos) {
                 console.log('Portal teleportation!', teleportPos);
 
@@ -150,7 +150,8 @@ export class Snake {
                 this.head.y = teleportPos.y;
 
                 // Move all body segments to follow the teleported head
-                // This ensures the entire snake moves together
+                // Note that this body segments still use the same following logic. The body segments naturally flow to the teleportation point.
+                // Because for next move, the head will be already moving from the the other side of portal.
                 for (let i = 1; i < this.body.length; i++) {
                     this.body[i].x = oldPositions[i - 1].x;
                     this.body[i].y = oldPositions[i - 1].y;
