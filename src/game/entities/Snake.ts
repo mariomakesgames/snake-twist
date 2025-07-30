@@ -9,7 +9,7 @@ export class Snake {
     private speed: number;
     public isMoving: boolean;
     public head: Phaser.GameObjects.Rectangle;
-    
+
     // Input management - use SwipeInputManager for all input handling
     private swipeInputManager?: SwipeInputManager;
 
@@ -22,12 +22,12 @@ export class Snake {
         this.moveTime = 0;
         this.speed = (scene as any).gameSpeed;
         this.isMoving = false;
-        
+
         // Find a valid spawn position that doesn't overlap with obstacles
         const validPosition = this.findValidSpawnPosition(x, y);
-        
+
         // Create snake head using graphics - align to grid
-        const gridSize = (scene as any).gridSize || 20; // Use unified grid size
+        const gridSize = (scene as any).gridSize || 20;
         this.head = scene.add.rectangle(validPosition.x, validPosition.y, gridSize - 2, gridSize - 2, 0x00ff00);
         scene.physics.add.existing(this.head);
         const headBody = this.head.body as any;
@@ -36,7 +36,7 @@ export class Snake {
         this.body.push(this.head);
         console.log('Snake head created at:', this.head.x, this.head.y);
         console.log('Snake head physics body:', headBody);
-        
+
         // Create initial body segments - align to grid
         for (let i = 1; i < 3; i++) {
             const segmentX = validPosition.x - i * gridSize;
@@ -46,7 +46,7 @@ export class Snake {
             this.body.push(segment);
             console.log('Body segment', i, 'created at:', segment.x, segment.y);
         }
-        
+
         // Initialize input manager
         this.setupInput();
         console.log('Snake created with', this.body.length, 'segments');
@@ -57,29 +57,29 @@ export class Snake {
     private findValidSpawnPosition(centerX: number, centerY: number): { x: number, y: number } {
         const gridSize = (this.scene as any).gridSize || 20;
         const margin = 2; // Keep some distance from edges
-        
+
         // Try center position first
         if (!(this.scene as any).isPositionOccupied(centerX, centerY)) {
             return { x: centerX, y: centerY };
         }
-        
+
         // Try positions around center in expanding spiral
         for (let radius = 1; radius <= 5; radius++) {
             for (let angle = 0; angle < 2 * Math.PI; angle += Math.PI / 4) {
                 const x = centerX + Math.cos(angle) * radius * gridSize;
                 const y = centerY + Math.sin(angle) * radius * gridSize;
-                
+
                 // Ensure position is within bounds
                 if (x >= margin * gridSize && x < this.scene.scale.width - margin * gridSize &&
                     y >= margin * gridSize && y < this.scene.scale.height - margin * gridSize) {
-                    
+
                     if (!(this.scene as any).isPositionOccupied(x, y)) {
                         return { x, y };
                     }
                 }
             }
         }
-        
+
         // Fallback to center if no valid position found
         console.warn('No valid spawn position found, using center');
         return { x: centerX, y: centerY };
@@ -112,7 +112,7 @@ export class Snake {
         if (!this.isMoving || time < this.moveTime) {
             return false;
         }
-        
+
         this.direction.copy(this.nextDirection);
         this.move();
         this.moveTime = time + this.speed;
@@ -126,67 +126,69 @@ export class Snake {
             x: segment.x,
             y: segment.y
         }));
-        
-        // Calculate new head position
-        const gridSize = (this.scene as any).gridSize || 20; // Use unified grid size
-        const newHeadX = this.head.x + this.direction.x * gridSize;
-        const newHeadY = this.head.y + this.direction.y * gridSize;
-        
 
-        
+        // Calculate new head position
+        const gridSize = (this.scene as any).gridSize || 20;
+        const newHeadX = this.head.x + this.direction.x * gridSize; // calculate the new head position based on the direction and grid size
+        const newHeadY = this.head.y + this.direction.y * gridSize;
+
         // Check for portal teleportation
         const portalManager = (this.scene as any).portalManager;
         if (portalManager && !portalManager.isCurrentlyTeleporting()) {
-            const teleportPos = portalManager.checkTeleportation(newHeadX, newHeadY);
+            const teleportPos = portalManager.checkTeleportation(newHeadX, newHeadY); // check if run into a portal, if so returns the position the head will be teleported to
             if (teleportPos) {
                 console.log('Portal teleportation!', teleportPos);
-                
+
                 // Show portal tutorial if not shown before
                 const foodTutorialManager = (this.scene as any).foodTutorialManager;
                 if (foodTutorialManager) {
                     foodTutorialManager.showTutorial('portal');
                 }
-                
+
                 // Teleport head to new position immediately
                 this.head.x = teleportPos.x;
                 this.head.y = teleportPos.y;
-                
+
                 // Move all body segments to follow the teleported head
-                // This ensures the entire snake moves together
+                // Note that this body segments still use the same following logic. The body segments naturally flow to the teleportation point.
+                // Because for next move, the head will be already moving from the the other side of portal.
                 for (let i = 1; i < this.body.length; i++) {
                     this.body[i].x = oldPositions[i - 1].x;
                     this.body[i].y = oldPositions[i - 1].y;
                 }
-                
+
                 // Check for self-collision after teleportation
                 this.checkSelfCollision();
-                
+
                 return;
             }
         }
-        
+
         // Check for wall collision
-        if (newHeadX < 0 || newHeadX >= this.scene.scale.width || 
+        if (newHeadX < 0 || newHeadX >= this.scene.scale.width ||
             newHeadY < 0 || newHeadY >= this.scene.scale.height) {
             console.log('Wall collision detected!');
             (this.scene as any).gameOver();
             return;
         }
-        
+
         // Note: Obstacle collision is handled by Phaser physics in ObstacleManager
         // No need for manual collision detection here
-        
+
         // Move head
         this.head.x = newHeadX;
         this.head.y = newHeadY;
-        
+
         // Move body segments
+        // Moving the snake's body segments after the head has already been moved
+        // Each body segment i moves to where the segment in front of it (i-1) used to be
         for (let i = 1; i < this.body.length; i++) {
             this.body[i].x = oldPositions[i - 1].x;
             this.body[i].y = oldPositions[i - 1].y;
         }
-        
+
         // Check for self-collision
+        // Only after the entire snake (head + all body segments) has moved to their final positions can we accurately determine if the head truly collides with any body segment. Imagine forming into a circle.
         this.checkSelfCollision();
     }
 
@@ -200,7 +202,7 @@ export class Snake {
     }
 
     public grow(segments: number = 1): void {
-        const gridSize = (this.scene as any).gridSize || 20; // Use unified grid size
+        const gridSize = (this.scene as any).gridSize || 20;
         for (let i = 0; i < segments; i++) {
             const lastSegment = this.body[this.body.length - 1];
             const newSegment = this.scene.add.rectangle(
@@ -211,15 +213,17 @@ export class Snake {
                 0x00cc00
             );
             this.scene.physics.add.existing(newSegment);
-            this.body.push(newSegment);
+            this.body.push(newSegment); // Add the new segment to the end of the body array, making it the new last segment, next time move loop will place it in the correct position where previous last segment was
         }
         console.log(`Snake grew by ${segments} segments! Total segments: ${this.body.length}`);
     }
 
     public shrink(segments: number = 1): void {
-        for (let i = 0; i < segments; i++) {
-            if (this.body.length > 1) {
-                const lastSegment = this.body.pop();
+        // parameter to specify how many segments to remove
+
+        for (let i = 0; i < segments; i++) { // remove X times
+            if (this.body.length > 1) { // (prevents removing the head)
+                const lastSegment = this.body.pop(); // Remove the last segment from the body array
                 if (lastSegment) {
                     lastSegment.destroy(); // Remove the visual element
                 }
@@ -245,7 +249,7 @@ export class Snake {
         if (this.swipeInputManager) {
             this.swipeInputManager.destroy();
         }
-        
+
         // Clean up body segments
         for (const segment of this.body) {
             segment.destroy();

@@ -91,6 +91,7 @@ export class MenuScene extends Phaser.Scene {
 
         // Update UI state
         this.updateLevelSelectVisibility();
+        this.updateLevelToggleDisplay();
 
         // Add entrance animations
         this.addEntranceAnimations();
@@ -179,7 +180,7 @@ export class MenuScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // Create toggle text
-        this.levelToggleText = this.add.text(10, 0, `Level Mode: ${isEnabled ? 'ON' : 'OFF'} (${isEnabled ? '1.5x' : '1x'} Score)`, {
+        this.levelToggleText = this.add.text(10, 0, `Level Mode: ${isEnabled ? 'ON' : 'OFF'}`, {
             fontSize: '16px',
             color: '#FFFFFF',
             fontFamily: 'Arial, sans-serif',
@@ -335,7 +336,7 @@ export class MenuScene extends Phaser.Scene {
         this.levelToggleIcon.setText(isEnabled ? '📋' : '⚪');
         
         // Update text
-        this.levelToggleText.setText(`Level Mode: ${isEnabled ? 'ON' : 'OFF'} (${isEnabled ? '1.5x' : '1x'} Score)`);
+        this.levelToggleText.setText(`Level Mode: ${isEnabled ? 'ON' : 'OFF'}`);
         
         // Update background color
         const background = this.levelToggleButton.getAt(0) as Phaser.GameObjects.Graphics;
@@ -347,6 +348,9 @@ export class MenuScene extends Phaser.Scene {
         background.fillRoundedRect(-140, -20, 280, 40, 20);
         background.lineStyle(2, borderColor, 1);
         background.strokeRoundedRect(-140, -20, 280, 40, 20);
+        
+        // Hide obstacle toggle button when level mode is enabled
+        this.obstacleToggleButton.setVisible(!isEnabled);
     }
 
     private updateLevelSelectDisplay(): void {

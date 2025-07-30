@@ -92,7 +92,7 @@ export class GameSettingsManager {
         if (this.settings.obstacleMode) {
             multiplier = this.settings.obstacleModeScoreMultiplier;
         } else if (this.settings.levelMode) {
-            multiplier = 1.5; // Level mode gets 1.5x multiplier
+            multiplier = 1.0; // Level mode uses normal multiplier
         }
         console.log(`Obstacle mode: ${this.settings.obstacleMode}, Level mode: ${this.settings.levelMode}, Multiplier: ${multiplier}`);
         return multiplier;

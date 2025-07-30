@@ -1,32 +1,29 @@
-import { Food } from '../Food';
+import { Food } from './Food';
 
-export class GrowthBoostFood extends Food {
+export class RegularFood extends Food {
     constructor(scene: Phaser.Scene) {
         super(scene);
-        // Change color to yellow
-        this.sprite.setFillStyle(0xffff00);
-        console.log('Growth boost food created!');
+        // Keep the default green color (0x00ff00 is already set in parent)
+        console.log('Regular food created!');
     }
 
     public onEaten(): void {
-        console.log('Growth boost food eaten!');
+        console.log('Food eaten!');
         const scene = this.scene as any;
         
-        // Grow snake by 5 segments
-        scene.snake.grow(5);
+        // Grow snake by 1 segment
+        scene.snake.grow(1);
         
         // Reposition food
         this.reposition();
         
-        // Show tutorial for growth boost food if not shown before
-        scene.foodTutorialManager.showTutorial('growth-boost');
-        
         // Update game state
         const gameState = (window as any).gameState;
         gameState.length = scene.snake.getLength();
-        const baseScoreGain = 50;
+        const baseScoreGain = 10; // Base score gain of 10 points
         const scoreGain = Math.round(baseScoreGain * scene.settingsManager.getScoreMultiplier());
-        gameState.score += scoreGain; // Higher score for growth boost food
+        console.log(`Base score: ${baseScoreGain}, Multiplier: ${scene.settingsManager.getScoreMultiplier()}, Final score: ${scoreGain}`);
+        gameState.score += scoreGain;
         if (gameState.score > gameState.highScore) {
             gameState.highScore = gameState.score;
             localStorage.setItem('snakeHighScore', gameState.highScore.toString());
@@ -34,8 +31,8 @@ export class GrowthBoostFood extends Food {
         (window as any).updateUI();
         
         // Show score and effect indicators
-        scene.scoreIndicator.showScoreIndicator(scene.snake.head.x, scene.snake.head.y, scoreGain, '#ffff00');
-        scene.scoreIndicator.showEffectIndicator(scene.snake.head.x, scene.snake.head.y + 30, '+5🟩', '#ffff00');
+        scene.scoreIndicator.showScoreIndicator(scene.snake.head.x, scene.snake.head.y, scoreGain, '#00ff00');
+        scene.scoreIndicator.showEffectIndicator(scene.snake.head.x, scene.snake.head.y + 30, '+1🟩', '#00ff00');
         
         // Increase speed every 50 points
         if (gameState.score % 50 === 0) {
@@ -44,4 +41,4 @@ export class GrowthBoostFood extends Food {
             (window as any).updateUI();
         }
     }
-} 
+}

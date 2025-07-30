@@ -1,8 +1,8 @@
 import { ShrinkFood } from '../entities/food/bad/ShrinkFood';
 import { SlowFood } from '../entities/food/bad/SlowFood';
-import { Food } from '../entities/food/Food';
 import { GrowthBoostFood } from '../entities/food/good/GrowthBoostFood';
 import { SpeedBoostFood } from '../entities/food/good/SpeedBoostFood';
+import { RegularFood } from '../entities/food/RegularFood';
 import { PortalManager } from '../entities/items/special/portal/PortalManager';
 import { LevelLoader } from '../entities/levels/LevelLoader';
 import { ObstacleManager } from '../entities/obstacles/ObstacleManager';
@@ -106,7 +106,7 @@ export class SnakeScene extends Phaser.Scene {
         }
         
         // Create regular food (after obstacles)
-        this.food = new Food(this);
+        this.food = new RegularFood(this);
         
         // Create growth boost food (yellow)
         this.growthBoostFood = new GrowthBoostFood(this);
@@ -127,11 +127,11 @@ export class SnakeScene extends Phaser.Scene {
         this.scoreIndicator = new ScoreIndicator(this);
         
         // Setup collision detection
-        this.physics.add.overlap(this.snake.head, this.food.sprite, this.eatFood, undefined, this);
-        this.physics.add.overlap(this.snake.head, this.growthBoostFood.sprite, this.eatGrowthBoostFood, undefined, this);
-        this.physics.add.overlap(this.snake.head, this.shrinkFood.sprite, this.eatShrinkFood, undefined, this);
-        this.physics.add.overlap(this.snake.head, this.speedBoostFood.sprite, this.eatSpeedBoostFood, undefined, this);
-        this.physics.add.overlap(this.snake.head, this.slowFood.sprite, this.eatSlowFood, undefined, this);
+        this.physics.add.overlap(this.snake.head, this.food.sprite, () => this.food.onEaten(), undefined, this);
+        this.physics.add.overlap(this.snake.head, this.growthBoostFood.sprite, () => this.growthBoostFood.onEaten(), undefined, this);
+        this.physics.add.overlap(this.snake.head, this.shrinkFood.sprite, () => this.shrinkFood.onEaten(), undefined, this);
+        this.physics.add.overlap(this.snake.head, this.speedBoostFood.sprite, () => this.speedBoostFood.onEaten(), undefined, this);
+        this.physics.add.overlap(this.snake.head, this.slowFood.sprite, () => this.slowFood.onEaten(), undefined, this);
         
         // Setup segment drop collision detection (will be updated when drops are created)
         this.setupSegmentDropCollisions();
@@ -254,6 +254,8 @@ export class SnakeScene extends Phaser.Scene {
         let attempts = 0;
         let radius = 1;
         
+        // This is a spiral search pattern that starts from a center point and expands outward in square rings to find a safe position for the snake.
+        // This spiral search ensures that the snake spawns as close as possible to the desired center point while avoiding obstacles, making for predictable and fair gameplay positioning.
         while (attempts < maxAttempts) {
             // Check positions in a square pattern around the center
             for (let dx = -radius; dx <= radius; dx++) {
@@ -1637,7 +1639,7 @@ export class SnakeScene extends Phaser.Scene {
         
         // Create food (reposition existing food)
         if (!this.food) {
-            this.food = new Food(this);
+            this.food = new RegularFood(this);
         } else {
             this.food.reposition();
         }

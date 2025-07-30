@@ -206,6 +206,7 @@ export class PortalManager {
         return null;
     }
 
+    // This is just for the effect and state update for portals.
     private startTeleportation(portal1: Portal, portal2: Portal): void {
         this.isTeleporting = true;
         this.teleportationStartTime = this.scene.time.now;
