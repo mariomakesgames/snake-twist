@@ -11,7 +11,7 @@ export class Obstacle {
         
         const gridSize = (scene as any).gridSize || 20;
         this.sprite = scene.add.rectangle(x, y, gridSize - 2, gridSize - 2, 0x666666);
-        scene.physics.add.existing(this.sprite);
+        scene.physics.add.existing(this.sprite); // Arcade Physics body
         
         // Make obstacle static (immovable)
         const body = this.sprite.body as any;

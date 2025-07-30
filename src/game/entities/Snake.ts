@@ -27,7 +27,7 @@ export class Snake {
         const validPosition = this.findValidSpawnPosition(x, y);
 
         // Create snake head using graphics - align to grid
-        const gridSize = (scene as any).gridSize || 20; // Use unified grid size
+        const gridSize = (scene as any).gridSize || 20;
         this.head = scene.add.rectangle(validPosition.x, validPosition.y, gridSize - 2, gridSize - 2, 0x00ff00);
         scene.physics.add.existing(this.head);
         const headBody = this.head.body as any;

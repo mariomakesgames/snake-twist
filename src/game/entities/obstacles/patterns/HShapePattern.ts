@@ -48,6 +48,7 @@ export class HShapePattern extends ObstaclePattern {
         // Convert grid positions to pixel positions and validate
         hPositions.forEach(pos => {
             const pixelPos = this.gridToPixel(pos.x, pos.y);
+            // TODO improve performance
             if (this.isValidPosition(pixelPos.x, pixelPos.y, positions)) {
                 positions.push(pixelPos);
             }

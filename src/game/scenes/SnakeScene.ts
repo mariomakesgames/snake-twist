@@ -254,6 +254,8 @@ export class SnakeScene extends Phaser.Scene {
         let attempts = 0;
         let radius = 1;
         
+        // This is a spiral search pattern that starts from a center point and expands outward in square rings to find a safe position for the snake.
+        // This spiral search ensures that the snake spawns as close as possible to the desired center point while avoiding obstacles, making for predictable and fair gameplay positioning.
         while (attempts < maxAttempts) {
             // Check positions in a square pattern around the center
             for (let dx = -radius; dx <= radius; dx++) {

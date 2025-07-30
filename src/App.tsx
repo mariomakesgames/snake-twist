@@ -4,13 +4,14 @@ import { EventBus } from './game/EventBus';
 
 function App()
 {
-    //  References to the PhaserGame component (game and scene are exposed)
+    // ⭐References to the PhaserGame instance (game and scene are exposed)
     const phaserRef = useRef<IRefPhaserGame | null>(null);
     const [score, setScore] = useState(0);
     const [highScore, setHighScore] = useState(0);
     const [length, setLength] = useState(3);
 
     // Event emitted from the PhaserGame component
+    // Allows the parent component (App) to know the current active scene in the Phaser game is ready
     const currentScene = (scene: Phaser.Scene) => {
         console.log('Scene ready:', scene.scene.key);
         // Scene change handler - can be used for future functionality

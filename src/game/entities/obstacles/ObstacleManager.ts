@@ -43,7 +43,7 @@ export class ObstacleManager {
             gameState.savedObstaclePositions = null;
         }
         
-        // Generate obstacle positions
+        // ⭐Generate obstacle positions
         const positions = this.selectedPattern.generate();
         console.log(`Generated ${positions.length} obstacle positions`);
         
