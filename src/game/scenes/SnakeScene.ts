@@ -150,6 +150,7 @@ export class SnakeScene extends Phaser.Scene {
         if (gameState) {
             if (!gameState.isReviving) {
                 gameState.score = 0;
+                gameState.length = this.snake.getLength(); // Set initial snake length
                 gameState.savedSnakeLength = undefined; // Clear saved length for new games
             }
             gameState.isPaused = false;
@@ -364,10 +365,13 @@ export class SnakeScene extends Phaser.Scene {
         gameState.isPaused = false;
         gameState.isGameOver = false;
         gameState.isTeleporting = false;
-        (window as any).updateUI();
         
         // Reset snake position and state
         this.resetSnake();
+        
+        // Set initial snake length after reset
+        gameState.length = this.snake.getLength();
+        (window as any).updateUI();
         
         // Start the snake
         this.snake.start();
@@ -642,6 +646,7 @@ export class SnakeScene extends Phaser.Scene {
         this.food.reposition();
         
         const gameState = (window as any).gameState;
+        gameState.length = this.snake.getLength(); // Update length in game state
         const baseScoreGain = 10; // Base score gain of 10 points
         const scoreGain = Math.round(baseScoreGain * this.settingsManager.getScoreMultiplier());
         console.log(`Base score: ${baseScoreGain}, Multiplier: ${this.settingsManager.getScoreMultiplier()}, Final score: ${scoreGain}`);
@@ -673,6 +678,7 @@ export class SnakeScene extends Phaser.Scene {
         this.foodTutorialManager.showTutorial('growth-boost');
         
         const gameState = (window as any).gameState;
+        gameState.length = this.snake.getLength(); // Update length in game state
         const baseScoreGain = 50;
         const scoreGain = Math.round(baseScoreGain * this.settingsManager.getScoreMultiplier());
         gameState.score += scoreGain; // Higher score for growth boost food
@@ -702,6 +708,8 @@ export class SnakeScene extends Phaser.Scene {
         // Show tutorial for shrink food if not shown before
         this.foodTutorialManager.showTutorial('shrink-food');
         
+        const gameState = (window as any).gameState;
+        gameState.length = this.snake.getLength(); // Update length in game state
         // No score change for shrink food
         (window as any).updateUI();
         
@@ -718,6 +726,7 @@ export class SnakeScene extends Phaser.Scene {
         this.foodTutorialManager.showTutorial('speed-boost');
         
         const gameState = (window as any).gameState;
+        gameState.length = this.snake.getLength(); // Update length in game state
         const baseScoreGain = 10; // Same as regular food since it only grows by 1
         const scoreGain = Math.round(baseScoreGain * this.settingsManager.getScoreMultiplier());
         gameState.score += scoreGain;
@@ -748,6 +757,7 @@ export class SnakeScene extends Phaser.Scene {
         this.foodTutorialManager.showTutorial('slow-food');
         
         const gameState = (window as any).gameState;
+        gameState.length = this.snake.getLength(); // Update length in game state
         const baseScoreGain = 10; // Same as regular food since it grows by 1
         const scoreGain = Math.round(baseScoreGain * this.settingsManager.getScoreMultiplier());
         gameState.score += scoreGain;
@@ -887,6 +897,11 @@ export class SnakeScene extends Phaser.Scene {
             // Grow snake immediately
             if (this.snake) {
                 this.snake.grow(collected);
+                
+                // Update length in game state
+                const gameState = (window as any).gameState;
+                gameState.length = this.snake.getLength();
+                (window as any).updateUI();
                 
                 // Show collection indicator
                 if (this.scoreIndicator) {
@@ -1439,6 +1454,7 @@ export class SnakeScene extends Phaser.Scene {
         const gameState = (window as any).gameState;
         if (gameState) {
             gameState.score = 0; // Reset score for restart
+            gameState.length = 3; // Reset length for restart
             gameState.isGameOver = false;
             gameState.isPaused = false;
             gameState.isReviving = false; // Not reviving, this is a restart
@@ -1457,6 +1473,7 @@ export class SnakeScene extends Phaser.Scene {
         const gameState = (window as any).gameState;
         if (gameState) {
             gameState.score = 0; // Reset score when going to menu
+            gameState.length = 3; // Reset length when going to menu
             gameState.isGameOver = false;
             gameState.isPaused = false;
             gameState.isReviving = false;

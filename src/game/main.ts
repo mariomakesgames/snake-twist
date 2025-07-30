@@ -7,6 +7,7 @@ import { GameConfig, GameState } from './types/game';
 const gameState: GameState = {
     score: 0,
     highScore: parseInt(localStorage.getItem('snakeHighScore') || '0'),
+    length: 3,
     isPaused: false,
     isGameOver: false
 };
@@ -18,9 +19,11 @@ const gameState: GameState = {
 function updateUI(): void {
     const scoreElement = document.getElementById('score');
     const highScoreElement = document.getElementById('highScore');
+    const lengthElement = document.getElementById('length');
     
     if (scoreElement) scoreElement.textContent = gameState.score.toString();
     if (highScoreElement) highScoreElement.textContent = gameState.highScore.toString();
+    if (lengthElement) lengthElement.textContent = gameState.length.toString();
     
     // Update speed display if element exists
     const speedElement = document.getElementById('speed');

@@ -85,6 +85,12 @@ h1 {
     /* iOS specific fix for background rendering issues */
     -webkit-backdrop-filter: blur(5px);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    min-width: 120px;
+    max-width: 120px;
+    text-align: center;
+    font-size: clamp(0.6em, 1.8vw, 0.9em);
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 /* Canvas样式已移至canvas-fix.css */
@@ -230,7 +236,10 @@ h1 {
 
     .score-item {
         padding: 8px 15px;
-        font-size: 1em;
+        font-size: clamp(0.6em, 1.8vw, 0.9em);
+        max-width: 100px;
+        white-space: nowrap;
+        overflow: hidden;
     }
 
     /* Canvas样式已移至canvas-fix.css */
@@ -271,9 +280,12 @@ h1 {
 
     .score-item {
         padding: 6px 12px;
-        font-size: 0.9em;
+        font-size: clamp(0.6em, 1.8vw, 0.9em);
         min-width: 80px;
+        max-width: 80px;
         text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
     }
 }
 
@@ -287,9 +299,12 @@ h1 {
 
     .score-item {
         padding: 6px 12px;
-        font-size: 0.9em;
+        font-size: clamp(0.6em, 1.8vw, 0.9em);
         min-width: 80px;
+        max-width: 80px;
         text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
     }
 }
 
