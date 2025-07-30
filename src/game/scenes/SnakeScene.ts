@@ -13,6 +13,7 @@ import { Snake } from '../entities/Snake';
 import { EventBus } from '../EventBus';
 import { GameSettingsManager } from '../GameSettings';
 import { FoodTutorialManager } from '../tutorial/FoodTutorialManager';
+import { UIHelper } from '../utils/UIHelper';
 
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
     || ('ontouchstart' in window)
@@ -47,6 +48,17 @@ export class SnakeScene extends Phaser.Scene {
 
     // Settings Manager
     private settingsManager: GameSettingsManager;
+
+    // Game Over Overlay Elements
+    private gameOverOverlay?: Phaser.GameObjects.Rectangle;
+    private gameOverPanel?: Phaser.GameObjects.Graphics;
+    private gameOverTitleText?: Phaser.GameObjects.Text;
+    private gameOverScoreText?: Phaser.GameObjects.Text;
+    private gameOverHighScoreText?: Phaser.GameObjects.Text;
+    private gameOverRestartButton?: Phaser.GameObjects.Container;
+    private gameOverMenuButton?: Phaser.GameObjects.Container;
+    private gameOverReviveButton?: Phaser.GameObjects.Container;
+    private isWatchingAd: boolean = false;
 
     constructor() {
         super({ key: 'SnakeScene' });
@@ -801,8 +813,6 @@ export class SnakeScene extends Phaser.Scene {
             // Create particle effect for game over
             this.createGameOverParticles();
             
-
-            
             this.isGameStarted = false;
             
             EventBus.emit('game-over', gameState.score);
@@ -815,9 +825,9 @@ export class SnakeScene extends Phaser.Scene {
                 this.tilemapObstacleManager.saveObstacles();
             }
             
-            // Switch to game over scene after a short delay
+            // Show game over overlay instead of switching scene
             this.time.delayedCall(1000, () => {
-                this.scene.start('GameOverScene', { score: gameState.score });
+                this.showGameOverOverlay(gameState.score);
             });
         }
     }
@@ -1164,5 +1174,474 @@ export class SnakeScene extends Phaser.Scene {
             this.obstacleManager = null;
             this.tilemapObstacleManager = null;
         }
+    }
+
+    // =================== GAME OVER OVERLAY METHODS ===================
+
+    private showGameOverOverlay(finalScore: number): void {
+        console.log('Showing game over overlay with score:', finalScore);
+        
+        // Disable any mobile input interference
+        this.disableMobileInputInterference();
+        
+        const centerX = this.gameWidth / 2;
+        const centerY = this.gameHeight / 2;
+
+        // Create background overlay
+        this.gameOverOverlay = UIHelper.createOverlay(this, 0x000000, 0.8);
+
+        // Create game over panel
+        this.gameOverPanel = UIHelper.createPanel(this, {
+            x: centerX,
+            y: centerY,
+            width: 500,
+            height: 480,
+            fillColor: 0x333333,
+            borderColor: 0xFF6B6B,
+            borderWidth: 4,
+            borderRadius: 25
+        });
+
+        // Create title
+        this.gameOverTitleText = UIHelper.createText(this, {
+            x: centerX,
+            y: centerY - 140,
+            text: 'GAME OVER!',
+            fontSize: '48px',
+            color: '#FF6B6B',
+            fontStyle: 'bold'
+        });
+
+        // Create score text
+        this.gameOverScoreText = UIHelper.createText(this, {
+            x: centerX,
+            y: centerY - 80,
+            text: `Final: ${finalScore}`,
+            fontSize: '32px',
+            color: '#ffffff',
+            fontStyle: 'bold'
+        });
+
+        // Get high score
+        const gameState = (window as any).gameState;
+        const highScore = gameState ? gameState.highScore : 0;
+        
+        // Create high score text
+        this.gameOverHighScoreText = UIHelper.createText(this, {
+            x: centerX,
+            y: centerY - 40,
+            text: `High: ${highScore}`,
+            fontSize: '24px',
+            color: '#FFD700'
+        });
+
+        // Create buttons - adjust positions to accommodate three buttons
+        this.createGameOverReviveButton(centerX, centerY + 20); // Center button
+        this.createGameOverRestartButton(centerX - 120, centerY + 100); // Left button
+        this.createGameOverMenuButton(centerX + 120, centerY + 100); // Right button
+
+        // Add entrance animations
+        this.addGameOverEntranceAnimations();
+
+        // Create particle effect
+        this.createGameOverOverlayParticles();
+    }
+
+    private disableMobileInputInterference(): void {
+        console.log('Disabling mobile input interference for Game Over overlay');
+        
+        const gameState = (window as any).gameState;
+        if (gameState && gameState.currentScene && gameState.currentScene.snake) {
+            const snake = gameState.currentScene.snake;
+            if (snake.swipeInputManager) {
+                console.log('Input manager disabled (via snake.isMoving)');
+            }
+        }
+    }
+
+    private createGameOverReviveButton(x: number, y: number): void {
+        this.gameOverReviveButton = UIHelper.createButton(this, {
+            x,
+            y,
+            width: 240,
+            height: 60,
+            text: '📺 REVIVE BY WATCH AD',
+            fontSize: '18px',
+            colors: {
+                fill: [0x4CAF50, 0x45A049, 0x388E3C, 0x2E7D32],
+                border: 0x66BB6A,
+                text: '#ffffff',
+                stroke: '#2E7D32'
+            },
+            onClick: () => {
+                console.log('Revive button clicked, isWatchingAd:', this.isWatchingAd);
+                if (this.isWatchingAd) {
+                    console.log('Already watching ad, ignoring click');
+                    return;
+                }
+                this.watchAdAndRevive();
+            }
+        });
+    }
+
+    private createGameOverRestartButton(x: number, y: number): void {
+        this.gameOverRestartButton = UIHelper.createButton(this, {
+            x,
+            y,
+            width: 200,
+            height: 60,
+            text: 'PLAY AGAIN',
+            fontSize: '20px',
+            colors: {
+                fill: [0xFF6B6B, 0xFF5252, 0xE53E3E, 0xD32F2F],
+                border: 0xFF8A80,
+                text: '#ffffff',
+                stroke: '#D32F2F'
+            },
+            onClick: () => {
+                this.restartGameFromOverlay();
+            }
+        });
+    }
+
+    private createGameOverMenuButton(x: number, y: number): void {
+        this.gameOverMenuButton = UIHelper.createButton(this, {
+            x,
+            y,
+            width: 200,
+            height: 60,
+            text: 'MAIN MENU',
+            fontSize: '20px',
+            colors: {
+                fill: [0x1a237e, 0x283593, 0x303f9f, 0x3949ab],
+                border: 0x5c6bc0,
+                text: '#ffffff',
+                stroke: '#1a237e'
+            },
+            onClick: () => {
+                this.goToMenuFromOverlay();
+            }
+        });
+    }
+
+    private watchAdAndRevive(): void {
+        console.log('watchAdAndRevive called, current state:', {
+            isWatchingAd: this.isWatchingAd,
+            reviveButton: !!this.gameOverReviveButton
+        });
+
+        if (this.isWatchingAd) {
+            console.log('Already watching ad, preventing duplicate calls');
+            return;
+        }
+        
+        if (!this.gameOverReviveButton) {
+            console.error('Revive button not found!');
+            return;
+        }
+        
+        console.log('Starting ad watch for revive...');
+        this.isWatchingAd = true;
+        
+        try {
+            // Change revive button to show loading state
+            UIHelper.setButtonLoadingState(
+                this.gameOverReviveButton,
+                '📺 WATCHING AD...',
+                {
+                    fill: [0x666666, 0x555555, 0x444444, 0x333333],
+                    border: 0x888888,
+                    text: '#ffffff'
+                }
+            );
+            
+            // Create loading animation
+            this.createAdLoadingEffect();
+            
+            // Mock ad watching - simulate 3 seconds
+            this.time.delayedCall(3000, () => {
+                console.log('Ad watching simulation completed');
+                this.onAdCompleted();
+            });
+            
+        } catch (error) {
+            console.error('Error in watchAdAndRevive:', error);
+            this.isWatchingAd = false;
+            this.restoreReviveButton();
+        }
+    }
+
+    private restoreReviveButton(): void {
+        if (!this.gameOverReviveButton) return;
+        
+        try {
+            UIHelper.restoreButtonState(
+                this.gameOverReviveButton,
+                '📺 REVIVE BY WATCH AD',
+                {
+                    fill: [0x4CAF50, 0x45A049, 0x388E3C, 0x2E7D32],
+                    border: 0x66BB6A,
+                    text: '#ffffff'
+                }
+            );
+        } catch (error) {
+            console.error('Error restoring revive button:', error);
+        }
+    }
+
+    private createAdLoadingEffect(): void {
+        if (!this.gameOverReviveButton) return;
+        
+        // Create loading particles around the revive button
+        UIHelper.createParticleEffect(this, this.gameOverReviveButton, 8, 0x4CAF50, 100);
+        
+        // Add pulsing effect to revive button during ad watching
+        UIHelper.createPulseAnimation(this, this.gameOverReviveButton, 1.05, 500, 5);
+    }
+
+    private onAdCompleted(): void {
+        console.log('Ad completed! Reviving player...');
+        
+        if (!this.gameOverReviveButton) {
+            console.error('Revive button not found in onAdCompleted');
+            this.isWatchingAd = false;
+            return;
+        }
+        
+        try {
+            // Show success effect
+            this.createReviveSuccessEffect();
+            
+            // Change button text to show success
+            const text = this.gameOverReviveButton.getAt(1) as Phaser.GameObjects.Text;
+            const background = this.gameOverReviveButton.getAt(0) as Phaser.GameObjects.Graphics;
+            
+            if (text && background) {
+                text.setText('✅ REVIVED!');
+                
+                background.clear();
+                background.fillGradientStyle(0x4CAF50, 0x45A049, 0x388E3C, 0x2E7D32, 1);
+                background.fillRoundedRect(-120, -30, 240, 60, 30);
+                background.lineStyle(3, 0x66BB6A, 1);
+                background.strokeRoundedRect(-120, -30, 240, 60, 30);
+                
+                // Keep button disabled to prevent multiple clicks
+                background.disableInteractive();
+                text.disableInteractive();
+                this.gameOverReviveButton.disableInteractive();
+            } else {
+                console.error('Failed to get button elements in onAdCompleted');
+            }
+            
+            // Reset the ad watching flag
+            this.isWatchingAd = false;
+            
+            // After a short delay, revive the player
+            this.time.delayedCall(1000, () => {
+                console.log('Starting player revival...');
+                this.revivePlayerFromOverlay();
+            });
+            
+        } catch (error) {
+            console.error('Error in onAdCompleted:', error);
+            this.isWatchingAd = false;
+            this.restoreReviveButton();
+        }
+    }
+
+    private createReviveSuccessEffect(): void {
+        if (!this.gameOverReviveButton) return;
+        
+        // Create celebration particles
+        UIHelper.createParticleEffect(this, this.gameOverReviveButton, 20, 0x4CAF50, 120);
+    }
+
+    private revivePlayerFromOverlay(): void {
+        console.log('Reviving player from overlay...');
+        
+        // Reset game state for revival
+        const gameState = (window as any).gameState;
+        if (gameState) {
+            gameState.isGameOver = false;
+            gameState.isPaused = false;
+            gameState.isReviving = true; // Set revival flag
+            // Keep the current score for revival
+        }
+        
+        // Hide game over overlay with animation
+        this.hideGameOverOverlay(() => {
+            // Revival logic happens in create() method when gameState.isReviving is true
+            console.log('Revival will be handled by existing revival logic');
+            this.scene.restart();
+        });
+    }
+
+    private restartGameFromOverlay(): void {
+        console.log('Restarting game from overlay...');
+        
+        // Reset game state for restart
+        const gameState = (window as any).gameState;
+        if (gameState) {
+            gameState.score = 0; // Reset score for restart
+            gameState.isGameOver = false;
+            gameState.isPaused = false;
+            gameState.isReviving = false; // Not reviving, this is a restart
+        }
+        
+        // Hide game over overlay with animation
+        this.hideGameOverOverlay(() => {
+            this.scene.restart();
+        });
+    }
+
+    private goToMenuFromOverlay(): void {
+        console.log('Going to menu from overlay...');
+        
+        // Reset game state for menu
+        const gameState = (window as any).gameState;
+        if (gameState) {
+            gameState.score = 0; // Reset score when going to menu
+            gameState.isGameOver = false;
+            gameState.isPaused = false;
+            gameState.isReviving = false;
+        }
+        
+        // Hide game over overlay with animation
+        this.hideGameOverOverlay(() => {
+            this.scene.start('MenuScene');
+        });
+    }
+
+    private hideGameOverOverlay(onComplete?: () => void): void {
+        const targets = [
+            this.gameOverTitleText,
+            this.gameOverScoreText,
+            this.gameOverHighScoreText,
+            this.gameOverRestartButton,
+            this.gameOverMenuButton,
+            this.gameOverReviveButton
+        ].filter(target => target !== undefined);
+
+        if (targets.length > 0) {
+            this.tweens.add({
+                targets: targets,
+                alpha: 0,
+                scaleX: 0.8,
+                scaleY: 0.8,
+                duration: 300,
+                ease: 'Power2',
+                onComplete: () => {
+                    this.cleanupGameOverOverlay();
+                    if (onComplete) {
+                        onComplete();
+                    }
+                }
+            });
+        } else {
+            this.cleanupGameOverOverlay();
+            if (onComplete) {
+                onComplete();
+            }
+        }
+    }
+
+    private cleanupGameOverOverlay(): void {
+        // Destroy all game over overlay elements
+        this.gameOverOverlay?.destroy();
+        this.gameOverPanel?.destroy();
+        this.gameOverTitleText?.destroy();
+        this.gameOverScoreText?.destroy();
+        this.gameOverHighScoreText?.destroy();
+        this.gameOverRestartButton?.destroy();
+        this.gameOverMenuButton?.destroy();
+        this.gameOverReviveButton?.destroy();
+        
+        // Reset references
+        this.gameOverOverlay = undefined;
+        this.gameOverPanel = undefined;
+        this.gameOverTitleText = undefined;
+        this.gameOverScoreText = undefined;
+        this.gameOverHighScoreText = undefined;
+        this.gameOverRestartButton = undefined;
+        this.gameOverMenuButton = undefined;
+        this.gameOverReviveButton = undefined;
+        this.isWatchingAd = false;
+    }
+
+    private addGameOverEntranceAnimations(): void {
+        // Panel animation
+        if (this.gameOverPanel) {
+            this.gameOverPanel.setScale(0.5);
+            this.gameOverPanel.setAlpha(0);
+            this.tweens.add({
+                targets: this.gameOverPanel,
+                scaleX: 1,
+                scaleY: 1,
+                alpha: 1,
+                duration: 400,
+                ease: 'Back.easeOut'
+            });
+        }
+
+        // Title animation
+        if (this.gameOverTitleText) {
+            this.gameOverTitleText.setAlpha(0);
+            this.gameOverTitleText.setScale(0.5);
+            this.tweens.add({
+                targets: this.gameOverTitleText,
+                alpha: 1,
+                scaleX: 1,
+                scaleY: 1,
+                duration: 600,
+                ease: 'Back.easeOut',
+                delay: 200
+            });
+        }
+
+        // Score text animation
+        if (this.gameOverScoreText) {
+            this.gameOverScoreText.setAlpha(0);
+            this.gameOverScoreText.setY(this.gameOverScoreText.y + 30);
+            this.tweens.add({
+                targets: this.gameOverScoreText,
+                alpha: 1,
+                y: this.gameOverScoreText.y - 30,
+                duration: 500,
+                ease: 'Power2',
+                delay: 400
+            });
+        }
+
+        // High score text animation
+        if (this.gameOverHighScoreText) {
+            this.gameOverHighScoreText.setAlpha(0);
+            this.gameOverHighScoreText.setY(this.gameOverHighScoreText.y + 30);
+            this.tweens.add({
+                targets: this.gameOverHighScoreText,
+                alpha: 1,
+                y: this.gameOverHighScoreText.y - 30,
+                duration: 500,
+                ease: 'Power2',
+                delay: 600
+            });
+        }
+
+        // Buttons immediately visible and active
+        if (this.gameOverRestartButton) {
+            this.gameOverRestartButton.setActive(true).setVisible(true);
+        }
+        if (this.gameOverMenuButton) {
+            this.gameOverMenuButton.setActive(true).setVisible(true);
+        }
+        if (this.gameOverReviveButton) {
+            this.gameOverReviveButton.setActive(true).setVisible(true);
+        }
+        console.log('Game Over buttons set to visible immediately');
+    }
+
+    private createGameOverOverlayParticles(): void {
+        // Create simple particle effect around the center
+        const centerTarget = { x: this.gameWidth / 2, y: this.gameHeight / 2 };
+        UIHelper.createParticleEffect(this, centerTarget as any, 30, 0x4CAF50, 200);
     }
 } 

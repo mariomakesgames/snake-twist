@@ -1,5 +1,4 @@
 import { AUTO, Game } from 'phaser';
-import { GameOverScene } from './scenes/GameOverScene';
 import { MenuScene } from './scenes/MenuScene';
 import { SnakeScene } from './scenes/SnakeScene';
 import { GameConfig, GameState } from './types/game';
@@ -58,7 +57,7 @@ const config: GameConfig = {
             debug: false
         }
     },
-    scene: [MenuScene, SnakeScene, GameOverScene],
+    scene: [MenuScene, SnakeScene],
     render: {
         pixelArt: false,
         antialias: true
